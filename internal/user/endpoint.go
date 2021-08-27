@@ -30,6 +30,11 @@ type (
 		ID      string `json:"id"`
 		Preload string `json:"preload"`
 	}
+
+	LoginReq struct {
+		ID       string `json:"id"`
+		Password string `json:"password"`
+	}
 )
 
 type Controller func(ctx context.Context, request interface{}) (interface{}, error)
@@ -39,6 +44,7 @@ type Endpoints struct {
 	Get    Controller
 	GetAll Controller
 	Store  Controller
+	Login  Controller
 	Update Controller
 	Delete Controller
 }
@@ -48,6 +54,7 @@ func MakeEndpoints(s Service) Endpoints {
 		Get:    makeGetEndpoint(s),
 		GetAll: makeGetAllEndpoint(s),
 		Store:  makeStoreEndpoint(s),
+		Login:  makeLoginEndpoint(s),
 		Update: makeUpdateEndpoint(s),
 		Delete: makeDeleteEndpoint(s),
 	}
@@ -99,6 +106,24 @@ func makeStoreEndpoint(service Service) Controller {
 			}
 		}
 
+		return response.Success("success", user, nil, nil), nil
+	}
+}
+
+func makeLoginEndpoint(service Service) Controller {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(LoginReq)
+		user, err := service.Login(ctx, req.ID, req.Password)
+		if err != nil {
+			switch err {
+			case NotFound:
+				return nil, NotFound
+			case InvalidAuthentication:
+				return nil, InvalidAuthentication
+			default:
+				return nil, err
+			}
+		}
 		return response.Success("success", user, nil, nil), nil
 	}
 }

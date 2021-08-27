@@ -16,6 +16,7 @@ type Filters struct {
 
 var NotFound = errors.New("Record not found")
 var FieldIsRequired = errors.New("Required values")
+var InvalidAuthentication = errors.New("Invalid authentication")
 
 type Service interface {
 	Get(ctx context.Context, id, pload string) (*User, error)
@@ -23,6 +24,7 @@ type Service interface {
 	Create(ctx context.Context, userName, firstName, lastName, password, email, phone, clientID, clientSecret, token string) (*User, error)
 	Update(ctx context.Context, id string) error
 	Delete(ctx context.Context, id string) error
+	Login(ctx context.Context, id, password string) (*User, error)
 }
 
 type service struct {
@@ -97,4 +99,19 @@ func (s *service) Update(ctx context.Context, id string) error {
 
 func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
+}
+
+func (s *service) Login(ctx context.Context, id, password string) (*User, error) {
+	user, err := s.repo.Get(ctx, id)
+	if err != nil {
+		_ = s.logger.CatchError(err)
+		return nil, NotFound
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		_ = s.logger.CatchError(err)
+		return nil, InvalidAuthentication
+	}
+
+	return user, nil
 }

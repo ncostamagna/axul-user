@@ -36,6 +36,13 @@ func NewHTTPServer(ctx context.Context, endpoints user.Endpoints) http.Handler {
 		opts...,
 	)).Methods("GET")
 
+	r.Handle("/users/{id}/login", httptransport.NewServer(
+		endpoint.Endpoint(endpoints.Login),
+		decodeLoginHandler,
+		encodeResponse,
+		opts...,
+	)).Methods("POST")
+
 	r.Handle("/users", httptransport.NewServer(
 		endpoint.Endpoint(endpoints.Store),
 		decodeStoreHandler,
@@ -79,6 +86,17 @@ func decodeGetAllHandler(_ context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
+func decodeLoginHandler(_ context.Context, r *http.Request) (interface{}, error) {
+	req := user.LoginReq{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, err
+	}
+	p := mux.Vars(r)
+	req.ID = p["id"]
+
+	return req, nil
+}
+
 func encodeResponse(ctx context.Context, w http.ResponseWriter, resp interface{}) error {
 	r := resp.(response.Response)
 	w.WriteHeader(200)
@@ -92,7 +110,7 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	case user.NotFound:
 		resp = response.NotFound(err.Error())
 		break
-	case user.FieldIsRequired:
+	case user.FieldIsRequired, user.InvalidAuthentication:
 		resp = response.BadRequest(err.Error())
 		break
 	default:
