@@ -40,7 +40,16 @@ func (r *repo) GetAll(ctx context.Context, filters Filters, offset, limit int) (
 }
 
 func (r *repo) Get(ctx context.Context, id string) (*User, error) {
-	return nil, nil
+	var user User
+	tx := r.db.WithContext(ctx).Model(&user)
+
+	result := tx.Where("id = ?", id).First(&user)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &user, nil
 }
 
 func (r *repo) Create(ctx context.Context, user *User) error {

@@ -69,7 +69,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.Handle("/users", handler.NewHTTPServer(ctx, user.MakeEndpoints(srv)))
+	mux.Handle("/", handler.NewHTTPServer(ctx, user.MakeEndpoints(srv)))
 
 	http.Handle("/", accessControl(mux))
 

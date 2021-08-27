@@ -2,15 +2,20 @@ package user
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/digitalhouse-dev/dh-kit/logger"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Filters struct {
 	ID   []string
 	Days int64
 }
+
+var NotFound = errors.New("Record not found")
+var FieldIsRequired = errors.New("Required values")
 
 type Service interface {
 	Get(ctx context.Context, id, pload string) (*User, error)
@@ -34,7 +39,14 @@ func NewService(repo Repository, logger logger.Logger) Service {
 }
 
 func (s *service) Get(ctx context.Context, id, pload string) (*User, error) {
-	return nil, nil
+	user, err := s.repo.Get(ctx, id)
+	if err != nil {
+		_ = s.logger.CatchError(err)
+		return nil, NotFound
+	}
+
+	s.logger.DebugMessage(fmt.Sprintf("Get %s User", user.ID))
+	return user, nil
 }
 
 func (s *service) GetAll(ctx context.Context, filters Filters, offset, limit int, pload string) (*[]User, error) {
@@ -49,11 +61,20 @@ func (s *service) GetAll(ctx context.Context, filters Filters, offset, limit int
 
 func (s *service) Create(ctx context.Context, userName, firstName, lastName, password, email, phone, clientID, clientSecret, token string) (*User, error) {
 
+	if userName == "" || firstName == "" || lastName == "" || password == "" || email == "" {
+		return nil, s.logger.CatchError(FieldIsRequired)
+	}
+
+	hashPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, s.logger.CatchError(err)
+	}
+
 	user := User{
 		UserName:     userName,
 		FirstName:    firstName,
 		LastName:     lastName,
-		Password:     password,
+		Password:     string(hashPassword),
 		Email:        email,
 		Phone:        phone,
 		ClientID:     clientID,

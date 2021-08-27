@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/digitalhouse-dev/dh-kit/response"
 	"github.com/go-kit/kit/endpoint"
@@ -19,16 +18,29 @@ func NewHTTPServer(ctx context.Context, endpoints user.Endpoints) http.Handler {
 	r := mux.NewRouter()
 	r.Use(commonMiddleware)
 
+	opts := []httptransport.ServerOption{
+		httptransport.ServerErrorEncoder(encodeError),
+	}
+
 	r.Handle("/users", httptransport.NewServer(
 		endpoint.Endpoint(endpoints.GetAll),
 		decodeGetAllHandler,
 		encodeResponse,
+		opts...,
+	)).Methods("GET")
+
+	r.Handle("/users/{id}", httptransport.NewServer(
+		endpoint.Endpoint(endpoints.Get),
+		decodeGetHandler,
+		encodeResponse,
+		opts...,
 	)).Methods("GET")
 
 	r.Handle("/users", httptransport.NewServer(
 		endpoint.Endpoint(endpoints.Store),
 		decodeStoreHandler,
 		encodeResponse,
+		opts...,
 	)).Methods("POST")
 
 	return r
@@ -52,13 +64,17 @@ func decodeStoreHandler(_ context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-func decodeGetAllHandler(_ context.Context, r *http.Request) (interface{}, error) {
-	v := r.URL.Query()
-	d, _ := strconv.ParseInt(v.Get("days"), 0, 64)
-
-	req := user.GetAllReq{
-		Days: d,
+func decodeGetHandler(_ context.Context, r *http.Request) (interface{}, error) {
+	p := mux.Vars(r)
+	req := user.GetReq{
+		ID: p["id"],
 	}
+
+	return req, nil
+}
+
+func decodeGetAllHandler(_ context.Context, r *http.Request) (interface{}, error) {
+	req := user.GetAllReq{}
 
 	return req, nil
 }
@@ -67,4 +83,24 @@ func encodeResponse(ctx context.Context, w http.ResponseWriter, resp interface{}
 	r := resp.(response.Response)
 	w.WriteHeader(200)
 	return json.NewEncoder(w).Encode(r)
+}
+
+func encodeError(_ context.Context, err error, w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	var resp response.Response
+	switch err {
+	case user.NotFound:
+		resp = response.NotFound(err.Error())
+		break
+	case user.FieldIsRequired:
+		resp = response.BadRequest(err.Error())
+		break
+	default:
+		resp = response.InternalServerError(err.Error())
+		break
+	}
+
+	w.WriteHeader(resp.StatusCode())
+
+	_ = json.NewEncoder(w).Encode(resp)
 }

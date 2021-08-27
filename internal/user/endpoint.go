@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/digitalhouse-dev/dh-kit/response"
 )
@@ -56,9 +55,20 @@ func MakeEndpoints(s Service) Endpoints {
 
 func makeGetEndpoint(service Service) Controller {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GetReq)
 
-		return response.Success("", nil, nil, nil), nil
+		users, err := service.Get(ctx, req.ID, req.Preload)
+		if err != nil {
+			switch err {
+			case NotFound:
+				return nil, NotFound
+			default:
+				return nil, err
+			}
 
+		}
+
+		return response.Success("", users, nil, nil), nil
 	}
 }
 
@@ -79,10 +89,14 @@ func makeGetAllEndpoint(service Service) Controller {
 func makeStoreEndpoint(service Service) Controller {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(StoreReq)
-		fmt.Println(req)
 		user, err := service.Create(ctx, req.UserName, req.FirstName, req.LastName, req.Password, req.Email, req.Phone, req.ClientID, req.ClientSecret, req.Token)
 		if err != nil {
-			return nil, response.BadRequest(err.Error())
+			switch err {
+			case FieldIsRequired:
+				return nil, FieldIsRequired
+			default:
+				return nil, err
+			}
 		}
 
 		return response.Success("success", user, nil, nil), nil
