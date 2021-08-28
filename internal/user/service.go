@@ -24,7 +24,8 @@ type Service interface {
 	Create(ctx context.Context, userName, firstName, lastName, password, email, phone, clientID, clientSecret, token string) (*User, error)
 	Update(ctx context.Context, id string) error
 	Delete(ctx context.Context, id string) error
-	Login(ctx context.Context, id, password string) (*User, error)
+	Login(ctx context.Context, user *User, password string) (string, error)
+	TokenAccess(ctx context.Context, id, token string) error
 }
 
 type service struct {
@@ -101,17 +102,30 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *service) Login(ctx context.Context, id, password string) (*User, error) {
-	user, err := s.repo.Get(ctx, id)
-	if err != nil {
-		_ = s.logger.CatchError(err)
-		return nil, NotFound
-	}
+func (s *service) Login(ctx context.Context, user *User, password string) (string, error) {
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		_ = s.logger.CatchError(err)
-		return nil, InvalidAuthentication
+		return "", InvalidAuthentication
 	}
 
-	return user, nil
+	token, err := CreateJWT(user.ID, user.UserName)
+
+	if err != nil {
+		_ = s.logger.CatchError(err)
+		return "", InvalidAuthentication
+	}
+	return token, nil
+}
+
+func (s *service) TokenAccess(ctx context.Context, id, token string) error {
+	user, err := AccessJWT(token)
+
+	fmt.Println(id)
+	fmt.Println(user)
+	if err != nil || user.ID != id {
+		return InvalidAuthentication
+	}
+
+	return nil
 }

@@ -35,6 +35,15 @@ type (
 		ID       string `json:"id"`
 		Password string `json:"password"`
 	}
+	LoginRes struct {
+		User  *User  `json:"user"`
+		Token string `json:"token"`
+	}
+
+	TokenReq struct {
+		ID    string `json:"id"`
+		Token string `json:"token"`
+	}
 )
 
 type Controller func(ctx context.Context, request interface{}) (interface{}, error)
@@ -45,6 +54,7 @@ type Endpoints struct {
 	GetAll Controller
 	Store  Controller
 	Login  Controller
+	Token  Controller
 	Update Controller
 	Delete Controller
 }
@@ -55,6 +65,7 @@ func MakeEndpoints(s Service) Endpoints {
 		GetAll: makeGetAllEndpoint(s),
 		Store:  makeStoreEndpoint(s),
 		Login:  makeLoginEndpoint(s),
+		Token:  makeTokenEndpoint(s),
 		Update: makeUpdateEndpoint(s),
 		Delete: makeDeleteEndpoint(s),
 	}
@@ -113,7 +124,7 @@ func makeStoreEndpoint(service Service) Controller {
 func makeLoginEndpoint(service Service) Controller {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(LoginReq)
-		user, err := service.Login(ctx, req.ID, req.Password)
+		user, err := service.Get(ctx, req.ID, "")
 		if err != nil {
 			switch err {
 			case NotFound:
@@ -124,7 +135,41 @@ func makeLoginEndpoint(service Service) Controller {
 				return nil, err
 			}
 		}
-		return response.Success("success", user, nil, nil), nil
+
+		token, err := service.Login(ctx, user, req.Password)
+		if err != nil {
+			switch err {
+			case NotFound:
+				return nil, NotFound
+			case InvalidAuthentication:
+				return nil, InvalidAuthentication
+			default:
+				return nil, err
+			}
+		}
+
+		return response.Success("success", LoginRes{user, token}, nil, nil), nil
+	}
+}
+
+func makeTokenEndpoint(service Service) Controller {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(TokenReq)
+
+		err := service.TokenAccess(ctx, req.ID, req.Token)
+
+		if err != nil {
+			switch err {
+			case NotFound:
+				return nil, NotFound
+			case InvalidAuthentication:
+				return nil, InvalidAuthentication
+			default:
+				return nil, err
+			}
+		}
+
+		return response.Success("success", nil, nil, nil), nil
 	}
 }
 

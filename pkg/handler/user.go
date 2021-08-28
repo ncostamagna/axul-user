@@ -22,9 +22,9 @@ func NewHTTPServer(ctx context.Context, endpoints user.Endpoints) http.Handler {
 		httptransport.ServerErrorEncoder(encodeError),
 	}
 
-	r.Handle("/users", httptransport.NewServer(
-		endpoint.Endpoint(endpoints.GetAll),
-		decodeGetAllHandler,
+	r.Handle("/users/{id}/token/{token}", httptransport.NewServer(
+		endpoint.Endpoint(endpoints.Token),
+		decodeTokenHandler,
 		encodeResponse,
 		opts...,
 	)).Methods("GET")
@@ -32,6 +32,13 @@ func NewHTTPServer(ctx context.Context, endpoints user.Endpoints) http.Handler {
 	r.Handle("/users/{id}", httptransport.NewServer(
 		endpoint.Endpoint(endpoints.Get),
 		decodeGetHandler,
+		encodeResponse,
+		opts...,
+	)).Methods("GET")
+
+	r.Handle("/users", httptransport.NewServer(
+		endpoint.Endpoint(endpoints.GetAll),
+		decodeGetAllHandler,
 		encodeResponse,
 		opts...,
 	)).Methods("GET")
@@ -93,6 +100,16 @@ func decodeLoginHandler(_ context.Context, r *http.Request) (interface{}, error)
 	}
 	p := mux.Vars(r)
 	req.ID = p["id"]
+
+	return req, nil
+}
+
+func decodeTokenHandler(_ context.Context, r *http.Request) (interface{}, error) {
+	p := mux.Vars(r)
+	req := user.TokenReq{
+		Token: p["token"],
+		ID:    p["id"],
+	}
 
 	return req, nil
 }
