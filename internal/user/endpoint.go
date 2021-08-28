@@ -32,7 +32,7 @@ type (
 	}
 
 	LoginReq struct {
-		ID       string `json:"id"`
+		UserName string `json:"username"`
 		Password string `json:"password"`
 	}
 	LoginRes struct {
@@ -124,7 +124,7 @@ func makeStoreEndpoint(service Service) Controller {
 func makeLoginEndpoint(service Service) Controller {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(LoginReq)
-		user, err := service.Get(ctx, req.ID, "")
+		user, err := service.GetByUserName(ctx, req.UserName)
 		if err != nil {
 			switch err {
 			case NotFound:

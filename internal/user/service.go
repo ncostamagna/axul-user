@@ -20,6 +20,7 @@ var InvalidAuthentication = errors.New("Invalid authentication")
 
 type Service interface {
 	Get(ctx context.Context, id, pload string) (*User, error)
+	GetByUserName(ctx context.Context, username string) (*User, error)
 	GetAll(ctx context.Context, filters Filters, offset, limit int, pload string) (*[]User, error)
 	Create(ctx context.Context, userName, firstName, lastName, password, email, phone, clientID, clientSecret, token string) (*User, error)
 	Update(ctx context.Context, id string) error
@@ -43,6 +44,17 @@ func NewService(repo Repository, logger logger.Logger) Service {
 
 func (s *service) Get(ctx context.Context, id, pload string) (*User, error) {
 	user, err := s.repo.Get(ctx, id)
+	if err != nil {
+		_ = s.logger.CatchError(err)
+		return nil, NotFound
+	}
+
+	s.logger.DebugMessage(fmt.Sprintf("Get %s User", user.ID))
+	return user, nil
+}
+
+func (s *service) GetByUserName(ctx context.Context, username string) (*User, error) {
+	user, err := s.repo.GetByUserName(ctx, username)
 	if err != nil {
 		_ = s.logger.CatchError(err)
 		return nil, NotFound
@@ -121,8 +133,6 @@ func (s *service) Login(ctx context.Context, user *User, password string) (strin
 func (s *service) TokenAccess(ctx context.Context, id, token string) error {
 	user, err := AccessJWT(token)
 
-	fmt.Println(id)
-	fmt.Println(user)
 	if err != nil || user.ID != id {
 		return InvalidAuthentication
 	}

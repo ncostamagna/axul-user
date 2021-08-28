@@ -43,7 +43,7 @@ func NewHTTPServer(ctx context.Context, endpoints user.Endpoints) http.Handler {
 		opts...,
 	)).Methods("GET")
 
-	r.Handle("/users/{id}/login", httptransport.NewServer(
+	r.Handle("/users/login", httptransport.NewServer(
 		endpoint.Endpoint(endpoints.Login),
 		decodeLoginHandler,
 		encodeResponse,
@@ -98,8 +98,6 @@ func decodeLoginHandler(_ context.Context, r *http.Request) (interface{}, error)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, err
 	}
-	p := mux.Vars(r)
-	req.ID = p["id"]
 
 	return req, nil
 }

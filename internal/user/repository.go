@@ -11,6 +11,7 @@ import (
 type Repository interface {
 	GetAll(ctx context.Context, filters Filters, offset, limit int) (*[]User, error)
 	Get(ctx context.Context, id string) (*User, error)
+	GetByUserName(ctx context.Context, username string) (*User, error)
 	Create(ctx context.Context, user *User) error
 	Update(ctx context.Context, id string) error
 	Delete(ctx context.Context, id string) error
@@ -44,6 +45,19 @@ func (r *repo) Get(ctx context.Context, id string) (*User, error) {
 	tx := r.db.WithContext(ctx).Model(&user)
 
 	result := tx.Where("id = ?", id).First(&user)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &user, nil
+}
+
+func (r *repo) GetByUserName(ctx context.Context, username string) (*User, error) {
+	var user User
+	tx := r.db.WithContext(ctx).Model(&user)
+
+	result := tx.Where("user_name = ?", username).First(&user)
 
 	if result.Error != nil {
 		return nil, result.Error
