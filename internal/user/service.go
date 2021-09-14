@@ -121,7 +121,7 @@ func (s *service) Login(ctx context.Context, user *User, password string) (strin
 		return "", InvalidAuthentication
 	}
 
-	token, err := CreateJWT(user.ID, user.UserName)
+	token, err := CreateJWT(user.ID, user.UserName, 0)
 
 	if err != nil {
 		_ = s.logger.CatchError(err)

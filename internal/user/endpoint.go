@@ -175,7 +175,6 @@ func makeTokenEndpoint(service Service) Controller {
 			}
 		}
 
-
 		return response.Success("success", AuthRes{Authorization: 1}, nil, nil), nil
 	}
 }

@@ -8,5 +8,6 @@ RUN ls
 RUN go get -d -v ./... 
 RUN go install -v ./...
 EXPOSE 8082
+EXPOSE 50055
 
 CMD ["axul_user"]

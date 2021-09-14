@@ -16,13 +16,16 @@ type UserClaims struct {
 	jwt.StandardClaims
 }
 
-func CreateJWT(id, username string) (string, error) {
+func CreateJWT(id, username string, duration int64) (string, error) {
 	claims := UserClaims{
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(24 * time.Hour).Unix(),
-		},
 		ID:       id,
 		UserName: username,
+	}
+
+	if duration != 0 {
+		claims.StandardClaims = jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(24 * time.Duration(duration)).Unix(),
+		}
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &claims)
