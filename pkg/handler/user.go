@@ -3,13 +3,15 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"net/http"
-
+	"errors"
 	"github.com/digitalhouse-dev/dh-kit/response"
 	"github.com/go-kit/kit/endpoint"
+	"github.com/go-kit/kit/transport/grpc"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	"github.com/ncostamagna/axul_user/internal/user"
+	"github.com/ncostamagna/axul_user/pkg/grpc/userpb"
+	"net/http"
 )
 
 //NewHTTPServer is a server handler
@@ -59,6 +61,49 @@ func NewHTTPServer(ctx context.Context, endpoints user.Endpoints) http.Handler {
 
 	return r
 
+}
+
+type gRPCServer struct {
+	getAuth grpc.Handler
+}
+
+// NewGRPCServer makes a set of endpoints available as a gRPC StatsServiceServer.
+func NewGRPCServer(ctx context.Context, endpoints user.Endpoints) userpb.AuthServiceServer {
+	return &gRPCServer{
+		getAuth: grpc.NewServer(
+			endpoint.Endpoint(endpoints.Token),
+			decodeTokenGrpc,
+			encodeTokenGrpc,
+		),
+	}
+}
+func (s *gRPCServer) GetAuth(ctx context.Context, req *userpb.AuthReq) (*userpb.Auth, error) {
+	_, resp, err := s.getAuth.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*userpb.Auth), nil
+}
+
+func decodeTokenGrpc(_ context.Context, request interface{}) (interface{}, error) {
+	req := request.(*userpb.AuthReq)
+	return user.TokenReq{ID: req.Id, Token: req.Token}, nil
+}
+
+func encodeTokenGrpc(_ context.Context, resp interface{}) (interface{}, error) {
+	r := resp.(response.Response)
+	d := r.GetData()
+
+	if d == nil {
+		return nil, errors.New("Entity doesn't exists")
+	}
+
+	entity := d.(user.AuthRes)
+	template := &userpb.Auth{
+		Authorization: entity.Authorization,
+	}
+
+	return template, nil
 }
 
 func commonMiddleware(next http.Handler) http.Handler {

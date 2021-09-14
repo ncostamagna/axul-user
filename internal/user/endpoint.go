@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/digitalhouse-dev/dh-kit/response"
 )
@@ -43,6 +44,10 @@ type (
 	TokenReq struct {
 		ID    string `json:"id"`
 		Token string `json:"token"`
+	}
+
+	AuthRes struct {
+		Authorization int32 `json:"authorization"`
 	}
 )
 
@@ -155,9 +160,10 @@ func makeLoginEndpoint(service Service) Controller {
 func makeTokenEndpoint(service Service) Controller {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(TokenReq)
-
+		fmt.Println(req.ID)
+		fmt.Println(req.Token)
 		err := service.TokenAccess(ctx, req.ID, req.Token)
-
+		fmt.Println(err)
 		if err != nil {
 			switch err {
 			case NotFound:
@@ -169,7 +175,8 @@ func makeTokenEndpoint(service Service) Controller {
 			}
 		}
 
-		return response.Success("success", nil, nil, nil), nil
+
+		return response.Success("success", AuthRes{Authorization: 1}, nil, nil), nil
 	}
 }
 
