@@ -91,7 +91,7 @@ func encrypt(stringToEncrypt string, keyString string) (encryptedString string) 
 	return fmt.Sprintf("%x", ciphertext)
 }
 
-func decrypt(encryptedString string, keyString string) (decryptedString string) {
+func decrypt(encryptedString string, keyString string) (string, error) {
 
 	key, _ := hex.DecodeString(keyString)
 	enc, _ := hex.DecodeString(encryptedString)
@@ -105,7 +105,7 @@ func decrypt(encryptedString string, keyString string) (decryptedString string) 
 	//Create a new GCM
 	aesGCM, err := cipher.NewGCM(block)
 	if err != nil {
-		panic(err.Error())
+		return "", err
 	}
 
 	//Get the nonce size
@@ -117,8 +117,8 @@ func decrypt(encryptedString string, keyString string) (decryptedString string) 
 	//Decrypt the data
 	plaintext, err := aesGCM.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		panic(err.Error())
+		return "", err
 	}
 
-	return fmt.Sprintf("%s", plaintext)
+	return fmt.Sprintf("%s", plaintext), nil
 }

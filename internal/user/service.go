@@ -131,9 +131,12 @@ func (s *service) Login(ctx context.Context, user *User, password string) (strin
 
 func (s *service) TokenAccess(ctx context.Context, id, token string) error {
 
-	decToken := decrypt(token, "6470fc52afd689ca17df8667729b2c0460ce90b781a01b0010d2c4c31c85cb21")
-	user, err := AccessJWT(decToken)
+	decToken, err := decrypt(token, "6470fc52afd689ca17df8667729b2c0460ce90b781a01b0010d2c4c31c85cb21")
+	if err != nil{
+		return InvalidAuthentication
+	}
 
+	user, err := AccessJWT(decToken)
 	if err != nil || user.ID != id {
 		return InvalidAuthentication
 	}
