@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/digitalhouse-dev/dh-kit/logger"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -132,7 +133,7 @@ func (s *service) Login(ctx context.Context, user *User, password string) (strin
 func (s *service) TokenAccess(ctx context.Context, id, token string) error {
 
 	decToken, err := decrypt(token, "6470fc52afd689ca17df8667729b2c0460ce90b781a01b0010d2c4c31c85cb21")
-	if err != nil{
+	if err != nil {
 		return InvalidAuthentication
 	}
 

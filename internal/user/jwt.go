@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -59,7 +60,6 @@ func AccessJWT(token string) (*UserClaims, error) {
 
 }
 
-
 func encrypt(stringToEncrypt string, keyString string) (encryptedString string) {
 
 	//Since the key is in string, we need to convert decode it to bytes
@@ -99,7 +99,7 @@ func decrypt(encryptedString string, keyString string) (string, error) {
 	//Create a new Cipher Block from the key
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		panic(err.Error())
+		return "", err
 	}
 
 	//Create a new GCM
@@ -112,6 +112,10 @@ func decrypt(encryptedString string, keyString string) (string, error) {
 	nonceSize := aesGCM.NonceSize()
 
 	//Extract the nonce from the encrypted data
+	fmt.Println(len(enc), nonceSize)
+	if len(enc) < nonceSize {
+		return "", errors.New("enc is lesser than nonce size")
+	}
 	nonce, ciphertext := enc[:nonceSize], enc[nonceSize:]
 
 	//Decrypt the data
