@@ -1,7 +1,7 @@
 version: "3.5"
 services:
-    mysql:
-        container_name: axul_user
+    axul_user:
+        image: ncostamagna/axul_user:v1.0.0
         build:
             context: .
             dockerfile: Dockerfile
