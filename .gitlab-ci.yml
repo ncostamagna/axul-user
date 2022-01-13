@@ -1,0 +1,74 @@
+image: golang:1.16
+
+stages:
+  - download
+  - test
+  - publish
+
+.install_tempate: &install
+  before_script:
+    - export GOSUMDB=off
+    - export GO111MODULE=on
+    - mkdir -p $GOPATH/src/github.com/ncostamagna $GOPATH/src/_/builds
+    - cp -r $CI_PROJECT_DIR $GOPATH/src/github.com/ncostamagna/axul_user
+    - ln -s $GOPATH/src/github.com/ncostamagna $GOPATH/src/_/builds/
+
+download:
+  <<: *install
+  stage: download
+  script:
+    - go get -d ./...
+
+
+.unit-test-job: # This job runs in the test stage.
+  <<: *install
+  stage: test
+  script:
+    - mkdir -p .cache
+    - export GOPATH="$CI_PROJECT_DIR/.cache"
+    - go test ./... -v -covermode=atomic -coverpkg=./... -count=1 -race
+    - echo "No test issues found."
+
+.lint-test-job: # This job also runs in the test stage.
+  <<: *install
+  stage: test
+  script:
+    - mkdir -p .cache
+    - export GOPATH="$CI_PROJECT_DIR/.cache"
+    - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.31.0
+    - $GOPATH/bin/golangci-lint run ./...
+    - echo "No lint issues found."
+
+.coverage-test-job: # This job runs in the test stage.
+  <<: *install
+  stage: test
+  script:
+    - mkdir -p .cache
+    - export GOPATH="$CI_PROJECT_DIR/.cache"
+    - go test ./... -covermode=atomic -coverpkg=./... -cover -coverprofile=c.out -count=1 -race
+    - go tool cover -html=c.out -o coverage.html
+    - go test ./... -v -bench=. > bench.log
+    - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.31.0
+    - $GOPATH/bin/golangci-lint run ./...
+  artifacts:
+    paths:
+      - coverage.html
+      - bench.log
+
+publish:
+  <<: *install
+  stage: publish
+  image: docker:stable
+  services:
+    - name: docker:dind
+      entrypoint: ["env", "-u", "DOCKER_HOST"]
+      command: ["dockerd-entrypoint.sh"]
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_DRIVER: overlay2
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_TOKEN"
+    - apk add --no-cache docker-compose
+    - echo "$IMAGE_VERSION"
+    - docker-compose build
+    - docker push ncostamagna/axul_user:$IMAGE_VERSION
