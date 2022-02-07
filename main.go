@@ -29,7 +29,7 @@ func main() {
 
 	fmt.Println("Initial")
 	var log = logger.New(logger.LogOption{Debug: true})
-	_ = godotenv.Overload()
+	_ = godotenv.Load()
 
 	var httpAddr = flag.String("http", ":"+os.Getenv("APP_PORT"), "http listen address")
 
