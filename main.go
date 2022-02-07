@@ -42,7 +42,7 @@ func main() {
 		os.Getenv("DATABASE_NAME"))
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		_ = log.CatchError(err)
+		_ = log.CatchError(fmt.Errorf("%s err: %v", dsn, err))
 		os.Exit(-1)
 	}
 	if os.Getenv("DATABASE_DEBUG") == "true" {
