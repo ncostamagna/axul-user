@@ -70,5 +70,14 @@ publish:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_TOKEN"
     - apk add --no-cache docker-compose
     - echo "$IMAGE_VERSION"
-    - docker-compose build
+    - > 
+      docker build  
+      --rm  
+      --cache-from ncostamagna/axul_user:latest 
+      --tag ncostamagna/axul_user:$IMAGE_VERSION
+      --build-arg DATABASE_USER=lalita
     - docker push ncostamagna/axul_user:$IMAGE_VERSION
+
+
+
+    
