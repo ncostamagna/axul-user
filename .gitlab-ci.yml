@@ -82,6 +82,10 @@ publish:
       --build-arg DATABASE_PORT=$DATABASE_PORT
       --build-arg DATABASE_DEBUG=$DATABASE_DEBUG
       --build-arg DATABASE_MIGRATE=$DATABASE_MIGRATE
+      --build-arg APP_PORT=$APP_PORT
+      --build-arg APP_URL=$APP_URL
+    
+    
       .
     - docker push ncostamagna/axul_user:$IMAGE_VERSION
 
