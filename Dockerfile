@@ -5,6 +5,8 @@ WORKDIR $GOPATH/src/github.com/ncostamagna/axul_user
 COPY . .
 RUN ls
 
+ARG DATABASE_PASSWORD 
+
 ENV DATABASE_HOST 'la pija negra'
 ENV DATABASE_USER $DATABASE_USER
 
