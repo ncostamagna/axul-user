@@ -76,6 +76,7 @@ publish:
       --cache-from ncostamagna/axul_user:latest 
       --tag ncostamagna/axul_user:$IMAGE_VERSION
       --build-arg DATABASE_PASSWORD=lalita
+      --build-arg DATABASE_NAME=lalita2
       .
     - docker push ncostamagna/axul_user:$IMAGE_VERSION
 
