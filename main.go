@@ -12,13 +12,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
-
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/ncostamagna/axul_user/pkg/grpc/userpb"
+	"github.com/rs/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"gorm.io/driver/mysql"
@@ -72,10 +72,9 @@ func main() {
 	}()
 
 	mux := http.NewServeMux()
-
 	mux.Handle("/", handler.NewHTTPServer(ctx, user.MakeEndpoints(srv)))
 
-	http.Handle("/", accessControl(mux))
+	http.Handle("/", cors.AllowAll().Handler(mux))
 
 	grpcServer := handler.NewGRPCServer(ctx, user.MakeEndpoints(srv))
 	grpcListener, err := net.Listen("tcp", ":50055")
@@ -104,18 +103,4 @@ func main() {
 		_ = log.CatchError(err)
 	}
 
-}
-
-func accessControl(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
-
-		if r.Method == "OPTIONS" {
-			return
-		}
-
-		h.ServeHTTP(w, r)
-	})
 }
