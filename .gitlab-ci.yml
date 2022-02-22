@@ -55,7 +55,7 @@ download:
       - coverage.html
       - bench.log
 
-publish:
+.publish:
   <<: *install
   stage: publish
   image: docker:stable

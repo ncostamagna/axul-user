@@ -1,30 +1,35 @@
-version: "3.5"
-services:
-    axul_user:
-        image: ncostamagna/axul_user:v1.0.0
-        build:
-            context: .
-            dockerfile: Dockerfile
+version: '3.3'
+
+services: 
+    api:
+        build: "."
         ports:
-            - "8082:8082"
-            - "50055:50055"
+            - "5000"
         environment:
-            - APP_PORT=8082
-            - TOKEN=
-            - DATABASE_HOST=
+            - DATABASE_HOST=axul-dev.cb1inrror0lv.us-east-1.rds.amazonaws.com
             - DATABASE_PORT=3306
             - DATABASE_NAME=axul_user
             - DATABASE_USER=root
-            - DATABASE_PASSWORD=
+            - DATABASE_PASSWORD=Axul1989
             - DATABASE_DEBUG=true
-        logging:
-            driver: "json-file"
-            options:
-                max-file: "5"
-                max-size: "10m"
-        networks:
-            - appnet
-networks:
-    appnet:
-        driver: "bridge"
+            - DATABASE_MIGRATE=true
+            - APP_PORT=5000
+
+        restart: "always"
+        networks: 
+            - "api.network"
+        deploy:
+            replicas: 1
             
+    nginx:
+        image: nginx:latest
+        volumes:
+            - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+        depends_on: 
+            - api
+        ports: 
+            - "8081:8081"
+        networks: 
+            - "api.network"
+networks: 
+    api.network:

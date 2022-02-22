@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
+
 	"github.com/digitalhouse-dev/dh-kit/response"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/transport/grpc"
@@ -11,7 +13,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/ncostamagna/axul_user/internal/user"
 	"github.com/ncostamagna/axul_user/pkg/grpc/userpb"
-	"net/http"
 )
 
 //NewHTTPServer is a server handler
@@ -43,7 +44,7 @@ func NewHTTPServer(ctx context.Context, endpoints user.Endpoints) http.Handler {
 		decodeGetAllHandler,
 		encodeResponse,
 		opts...,
-	)).Methods("GET")
+	)).Methods("GET", "OPTIONS")
 
 	r.Handle("/users/login", httptransport.NewServer(
 		endpoint.Endpoint(endpoints.Login),
@@ -57,7 +58,7 @@ func NewHTTPServer(ctx context.Context, endpoints user.Endpoints) http.Handler {
 		decodeStoreHandler,
 		encodeResponse,
 		opts...,
-	)).Methods("POST")
+	)).Methods("POST", "OPTIONS")
 
 	return r
 
