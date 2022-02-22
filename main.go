@@ -74,7 +74,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/", handler.NewHTTPServer(ctx, user.MakeEndpoints(srv)))
 
-	http.Handle("/", cors.AllowAll().Handler(mux))
+	http.Handle("/", cors.AllowAll().Handler(accessControl(mux)))
 
 	grpcServer := handler.NewGRPCServer(ctx, user.MakeEndpoints(srv))
 	grpcListener, err := net.Listen("tcp", ":50055")
@@ -103,4 +103,18 @@ func main() {
 		_ = log.CatchError(err)
 	}
 
+}
+
+func accessControl(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, HEAD")
+		w.Header().Set("Access-Control-Allow-Headers", "Accept,Authorization,Cache-Control,Content-Type,DNT,If-Modified-Since,Keep-Alive,Origin,User-Agent,X-Requested-With")
+
+		if r.Method == "OPTIONS" {
+			return
+		}
+
+		h.ServeHTTP(w, r)
+	})
 }
