@@ -14,6 +14,7 @@ services:
             - DATABASE_DEBUG=true
             - DATABASE_MIGRATE=true
             - APP_PORT=5000
+            - TOKEN=fb27698e-948a-4ece-8b56-0e2f11b1b34c
 
         restart: "always"
         networks: 
