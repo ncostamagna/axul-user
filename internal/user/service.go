@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	authentication "github.com/ncostamagna/axul_auth/auth"
+
 	"github.com/digitalhouse-dev/dh-kit/logger"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -31,13 +33,15 @@ type Service interface {
 
 type service struct {
 	repo   Repository
+	auth   authentication.Auth
 	logger logger.Logger
 }
 
 //NewService is a service handler
-func NewService(repo Repository, logger logger.Logger) Service {
+func NewService(repo Repository, auth authentication.Auth, logger logger.Logger) Service {
 	return &service{
 		repo:   repo,
+		auth:   auth,
 		logger: logger,
 	}
 }
@@ -121,26 +125,15 @@ func (s *service) Login(ctx context.Context, user *User, password string) (strin
 		return "", InvalidAuthentication
 	}
 
-	token, err := CreateJWT(user.ID, user.UserName, 0)
-	encToken := encrypt(token, "6470fc52afd689ca17df8667729b2c0460ce90b781a01b0010d2c4c31c85cb21")
+	token, err := s.auth.Create(user.ID, user.UserName, 0)
 	if err != nil {
 		_ = s.logger.CatchError(err)
 		return "", InvalidAuthentication
 	}
-	return encToken, nil
+	return token, nil
 }
 
 func (s *service) TokenAccess(ctx context.Context, id, token string) error {
 
-	decToken, err := decrypt(token, "6470fc52afd689ca17df8667729b2c0460ce90b781a01b0010d2c4c31c85cb21")
-	if err != nil {
-		return InvalidAuthentication
-	}
-
-	user, err := AccessJWT(decToken)
-	if err != nil || user.ID != id {
-		return InvalidAuthentication
-	}
-
-	return nil
+	return s.auth.Access(id, token)
 }

@@ -4,10 +4,10 @@ import (
 	"net"
 
 	"github.com/digitalhouse-dev/dh-kit/logger"
+	"github.com/joho/godotenv"
+	authentication "github.com/ncostamagna/axul_auth/auth"
 	"github.com/ncostamagna/axul_user/internal/user"
 	"github.com/ncostamagna/axul_user/pkg/handler"
-
-	"github.com/joho/godotenv"
 
 	"context"
 	"flag"
@@ -57,10 +57,17 @@ func main() {
 	flag.Parse()
 	ctx := context.Background()
 
+	token := os.Getenv("TOKEN")
+	auth, err := authentication.New(token)
+	if err != nil {
+		_ = log.CatchError(fmt.Errorf("%s err: %v", dsn, err))
+		os.Exit(-1)
+	}
+
 	var srv user.Service
 	{
 		repository := user.NewRepository(db, log)
-		srv = user.NewService(repository, log)
+		srv = user.NewService(repository, auth, log)
 	}
 
 	errs := make(chan error)
