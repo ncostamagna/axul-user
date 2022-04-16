@@ -28,7 +28,7 @@ type Service interface {
 	Update(ctx context.Context, id string) error
 	Delete(ctx context.Context, id string) error
 	Login(ctx context.Context, user *User, password string) (string, error)
-	TokenAccess(ctx context.Context, id, token string) error
+	TokenAccess(ctx context.Context, id, token string) (*User, error)
 }
 
 type service struct {
@@ -133,7 +133,20 @@ func (s *service) Login(ctx context.Context, user *User, password string) (strin
 	return token, nil
 }
 
-func (s *service) TokenAccess(ctx context.Context, id, token string) error {
+func (s *service) TokenAccess(ctx context.Context, id, token string) (*User, error) {
 
-	return s.auth.Access(id, token)
+	if err := s.auth.Access(id, token); err != nil {
+		return nil, err
+	}
+
+	user, err := s.repo.Get(ctx, id)
+	if err != nil {
+		_ = s.logger.CatchError(err)
+		return nil, NotFound
+	}
+
+	s.logger.DebugMessage(fmt.Sprintf("Get %s User with token %s", id, token))
+
+	return user, nil
+
 }
