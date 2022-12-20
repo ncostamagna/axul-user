@@ -31,7 +31,7 @@ func main() {
 	var log = logger.New(logger.LogOption{Debug: true})
 	_ = godotenv.Load()
 
-	var httpAddr = flag.String("http", ":5000", "http listen address")
+	var httpAddr = flag.String("http", ":"+os.Getenv("APP_PORT"), "http listen address")
 
 	fmt.Println("DataBases")
 	dsn := fmt.Sprintf("%s:%s@(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local",
