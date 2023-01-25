@@ -2,8 +2,8 @@ package user
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/ncostamagna/axul_domain/domain"
 
 	authentication "github.com/ncostamagna/axul_auth/auth"
 
@@ -16,19 +16,15 @@ type Filters struct {
 	Days int64
 }
 
-var NotFound = errors.New("Record not found")
-var FieldIsRequired = errors.New("Required values")
-var InvalidAuthentication = errors.New("Invalid authentication")
-
 type Service interface {
-	Get(ctx context.Context, id, pload string) (*User, error)
-	GetByUserName(ctx context.Context, username string) (*User, error)
-	GetAll(ctx context.Context, filters Filters, offset, limit int, pload string) (*[]User, error)
-	Create(ctx context.Context, userName, firstName, lastName, password, email, phone, clientID, clientSecret, token string) (*User, error)
+	Get(ctx context.Context, id, pload string) (*domain.User, error)
+	GetByUserName(ctx context.Context, username string) (*domain.User, error)
+	GetAll(ctx context.Context, filters Filters, offset, limit int, pload string) ([]domain.User, error)
+	Create(ctx context.Context, userName, firstName, lastName, password, email, phone, clientID, clientSecret, token string) (*domain.User, error)
 	Update(ctx context.Context, id string) error
 	Delete(ctx context.Context, id string) error
-	Login(ctx context.Context, user *User, password string) (string, error)
-	TokenAccess(ctx context.Context, id, token string) (*User, error)
+	Login(ctx context.Context, user *domain.User, password string) (string, error)
+	TokenAccess(ctx context.Context, id, token string) (*domain.User, error)
 }
 
 type service struct {
@@ -37,7 +33,7 @@ type service struct {
 	logger logger.Logger
 }
 
-//NewService is a service handler
+// NewService is a service handler
 func NewService(repo Repository, auth authentication.Auth, logger logger.Logger) Service {
 	return &service{
 		repo:   repo,
@@ -46,7 +42,7 @@ func NewService(repo Repository, auth authentication.Auth, logger logger.Logger)
 	}
 }
 
-func (s *service) Get(ctx context.Context, id, pload string) (*User, error) {
+func (s *service) Get(ctx context.Context, id, pload string) (*domain.User, error) {
 	user, err := s.repo.Get(ctx, id)
 	if err != nil {
 		_ = s.logger.CatchError(err)
@@ -57,7 +53,7 @@ func (s *service) Get(ctx context.Context, id, pload string) (*User, error) {
 	return user, nil
 }
 
-func (s *service) GetByUserName(ctx context.Context, username string) (*User, error) {
+func (s *service) GetByUserName(ctx context.Context, username string) (*domain.User, error) {
 	user, err := s.repo.GetByUserName(ctx, username)
 	if err != nil {
 		_ = s.logger.CatchError(err)
@@ -68,17 +64,17 @@ func (s *service) GetByUserName(ctx context.Context, username string) (*User, er
 	return user, nil
 }
 
-func (s *service) GetAll(ctx context.Context, filters Filters, offset, limit int, pload string) (*[]User, error) {
+func (s *service) GetAll(ctx context.Context, filters Filters, offset, limit int, pload string) ([]domain.User, error) {
 	users, err := s.repo.GetAll(ctx, filters, offset, limit)
 	if err != nil {
 		return nil, s.logger.CatchError(err)
 	}
 
-	s.logger.DebugMessage(fmt.Sprintf("Get %d Users", len(*users)))
+	s.logger.DebugMessage(fmt.Sprintf("Get %d Users", len(users)))
 	return users, nil
 }
 
-func (s *service) Create(ctx context.Context, userName, firstName, lastName, password, email, phone, clientID, clientSecret, token string) (*User, error) {
+func (s *service) Create(ctx context.Context, userName, firstName, lastName, password, email, phone, clientID, clientSecret, token string) (*domain.User, error) {
 
 	if userName == "" || firstName == "" || lastName == "" || password == "" || email == "" {
 		return nil, s.logger.CatchError(FieldIsRequired)
@@ -89,7 +85,7 @@ func (s *service) Create(ctx context.Context, userName, firstName, lastName, pas
 		return nil, s.logger.CatchError(err)
 	}
 
-	user := User{
+	user := domain.User{
 		UserName:     userName,
 		FirstName:    firstName,
 		LastName:     lastName,
@@ -118,7 +114,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *service) Login(ctx context.Context, user *User, password string) (string, error) {
+func (s *service) Login(ctx context.Context, user *domain.User, password string) (string, error) {
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		_ = s.logger.CatchError(err)
@@ -133,7 +129,7 @@ func (s *service) Login(ctx context.Context, user *User, password string) (strin
 	return token, nil
 }
 
-func (s *service) TokenAccess(ctx context.Context, id, token string) (*User, error) {
+func (s *service) TokenAccess(ctx context.Context, id, token string) (*domain.User, error) {
 
 	if err := s.auth.Access(id, token); err != nil {
 		return nil, err
