@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"github.com/ncostamagna/axul_domain/domain"
 
 	"github.com/digitalhouse-dev/dh-kit/response"
 )
@@ -36,8 +37,8 @@ type (
 		Password string `json:"password"`
 	}
 	LoginRes struct {
-		User  *User  `json:"user"`
-		Token string `json:"token"`
+		User  *domain.User `json:"user"`
+		Token string       `json:"token"`
 	}
 
 	TokenReq struct {
@@ -46,14 +47,14 @@ type (
 	}
 
 	AuthRes struct {
-		Authorization int32 `json:"authorization"`
-		User          *User `json:"user"`
+		Authorization int32        `json:"authorization"`
+		User          *domain.User `json:"user"`
 	}
 )
 
 type Controller func(ctx context.Context, request interface{}) (interface{}, error)
 
-//Endpoints struct
+// Endpoints struct
 type Endpoints struct {
 	Get    Controller
 	GetAll Controller

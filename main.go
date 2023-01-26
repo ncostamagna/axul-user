@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/ncostamagna/axul_domain/domain"
 	"net"
 
 	"github.com/digitalhouse-dev/dh-kit/logger"
@@ -50,7 +51,7 @@ func main() {
 	}
 
 	if os.Getenv("DATABASE_MIGRATE") == "true" {
-		err := db.AutoMigrate(&user.User{})
+		err := db.AutoMigrate(&domain.User{})
 		_ = log.CatchError(err)
 	}
 
