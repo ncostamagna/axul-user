@@ -76,10 +76,6 @@ func (s *service) GetAll(ctx context.Context, filters Filters, offset, limit int
 
 func (s *service) Create(ctx context.Context, userName, firstName, lastName, password, email, phone, clientID, clientSecret, token string) (*domain.User, error) {
 
-	if userName == "" || firstName == "" || lastName == "" || password == "" || email == "" {
-		return nil, s.logger.CatchError(FieldIsRequired)
-	}
-
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, s.logger.CatchError(err)

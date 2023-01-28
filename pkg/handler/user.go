@@ -3,116 +3,71 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	"github.com/gin-gonic/gin"
 	"net/http"
 
 	"github.com/digitalhouse-dev/dh-kit/response"
 	"github.com/go-kit/kit/endpoint"
-	"github.com/go-kit/kit/transport/grpc"
 	httptransport "github.com/go-kit/kit/transport/http"
-	"github.com/gorilla/mux"
 	"github.com/ncostamagna/axul_user/internal/user"
-	"github.com/ncostamagna/axul_user/pkg/grpc/userpb"
 )
 
-//NewHTTPServer is a server handler
-func NewHTTPServer(ctx context.Context, endpoints user.Endpoints) http.Handler {
+// NewHTTPServer is a server handler
+func NewHTTPServer(_ context.Context, endpoints user.Endpoints) http.Handler {
 
-	r := mux.NewRouter()
-	r.Use(commonMiddleware)
+	r := gin.Default()
 
 	opts := []httptransport.ServerOption{
 		httptransport.ServerErrorEncoder(encodeError),
 	}
 
-	r.Handle("/users/{id}/token/{token}", httptransport.NewServer(
+	r.Use(ginDecode())
+
+	r.GET("/users/{id}/token/{token}", gin.WrapH(httptransport.NewServer(
 		endpoint.Endpoint(endpoints.Token),
 		decodeTokenHandler,
 		encodeResponse,
 		opts...,
-	)).Methods("GET")
+	)))
 
-	r.Handle("/users/{id}", httptransport.NewServer(
+	r.GET("/users/{id}", gin.WrapH(httptransport.NewServer(
 		endpoint.Endpoint(endpoints.Get),
 		decodeGetHandler,
 		encodeResponse,
 		opts...,
-	)).Methods("GET")
+	)))
 
-	r.Handle("/users", httptransport.NewServer(
+	r.GET("/users", gin.WrapH(httptransport.NewServer(
 		endpoint.Endpoint(endpoints.GetAll),
 		decodeGetAllHandler,
 		encodeResponse,
 		opts...,
-	)).Methods("GET", "OPTIONS")
+	)))
 
-	r.Handle("/users/login", httptransport.NewServer(
+	r.POST("/users/login", gin.WrapH(httptransport.NewServer(
 		endpoint.Endpoint(endpoints.Login),
 		decodeLoginHandler,
 		encodeResponse,
 		opts...,
-	)).Methods("POST")
+	)))
 
-	r.Handle("/users", httptransport.NewServer(
+	r.POST("/users", gin.WrapH(httptransport.NewServer(
 		endpoint.Endpoint(endpoints.Store),
 		decodeStoreHandler,
 		encodeResponse,
 		opts...,
-	)).Methods("POST", "OPTIONS")
+	)))
 
 	return r
 
 }
 
-type gRPCServer struct {
-	getAuth grpc.Handler
-}
-
-// NewGRPCServer makes a set of endpoints available as a gRPC StatsServiceServer.
-func NewGRPCServer(ctx context.Context, endpoints user.Endpoints) userpb.AuthServiceServer {
-	return &gRPCServer{
-		getAuth: grpc.NewServer(
-			endpoint.Endpoint(endpoints.Token),
-			decodeTokenGrpc,
-			encodeTokenGrpc,
-		),
+func ginDecode() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := context.WithValue(c.Request.Context(), "params", c.Params)
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
 	}
-}
-func (s *gRPCServer) GetAuth(ctx context.Context, req *userpb.AuthReq) (*userpb.Auth, error) {
-	_, resp, err := s.getAuth.ServeGRPC(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp.(*userpb.Auth), nil
-}
-
-func decodeTokenGrpc(_ context.Context, request interface{}) (interface{}, error) {
-	req := request.(*userpb.AuthReq)
-	return user.TokenReq{ID: req.Id, Token: req.Token}, nil
-}
-
-func encodeTokenGrpc(_ context.Context, resp interface{}) (interface{}, error) {
-	r := resp.(response.Response)
-	d := r.GetData()
-
-	if d == nil {
-		return nil, errors.New("Entity doesn't exists")
-	}
-
-	entity := d.(user.AuthRes)
-	template := &userpb.Auth{
-		Authorization: entity.Authorization,
-	}
-
-	return template, nil
-}
-
-func commonMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "application/json")
-
-		next.ServeHTTP(w, r)
-	})
 }
 
 func decodeStoreHandler(_ context.Context, r *http.Request) (interface{}, error) {
@@ -124,10 +79,10 @@ func decodeStoreHandler(_ context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-func decodeGetHandler(_ context.Context, r *http.Request) (interface{}, error) {
-	p := mux.Vars(r)
+func decodeGetHandler(ctx context.Context, r *http.Request) (interface{}, error) {
+	pp := ctx.Value("params").(gin.Params)
 	req := user.GetReq{
-		ID: p["id"],
+		ID: pp.ByName("id"),
 	}
 
 	return req, nil
@@ -148,11 +103,11 @@ func decodeLoginHandler(_ context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-func decodeTokenHandler(_ context.Context, r *http.Request) (interface{}, error) {
-	p := mux.Vars(r)
+func decodeTokenHandler(ctx context.Context, r *http.Request) (interface{}, error) {
+	pp := ctx.Value("params").(gin.Params)
 	req := user.TokenReq{
-		Token: p["token"],
-		ID:    p["id"],
+		Token: pp.ByName("token"),
+		ID:    pp.ByName("id"),
 	}
 
 	return req, nil
@@ -166,20 +121,7 @@ func encodeResponse(ctx context.Context, w http.ResponseWriter, resp interface{}
 
 func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	var resp response.Response
-	switch err {
-	case user.NotFound:
-		resp = response.NotFound(err.Error())
-		break
-	case user.FieldIsRequired, user.InvalidAuthentication:
-		resp = response.BadRequest(err.Error())
-		break
-	default:
-		resp = response.InternalServerError(err.Error())
-		break
-	}
-
+	resp := err.(response.Response)
 	w.WriteHeader(resp.StatusCode())
-
 	_ = json.NewEncoder(w).Encode(resp)
 }

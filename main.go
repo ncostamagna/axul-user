@@ -1,29 +1,21 @@
 package main
 
 import (
-	"github.com/ncostamagna/axul_domain/domain"
-	"net"
-
 	"github.com/digitalhouse-dev/dh-kit/logger"
 	"github.com/joho/godotenv"
 	authentication "github.com/ncostamagna/axul_auth/auth"
+	"github.com/ncostamagna/axul_domain/domain"
 	"github.com/ncostamagna/axul_user/internal/user"
 	"github.com/ncostamagna/axul_user/pkg/handler"
+	"time"
 
 	"context"
 	"flag"
 	"fmt"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-
-	"github.com/ncostamagna/axul_user/pkg/grpc/userpb"
-	"github.com/rs/cors"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"net/http"
+	"os"
 )
 
 func main() {
@@ -31,8 +23,6 @@ func main() {
 	fmt.Println("Initial")
 	var log = logger.New(logger.LogOption{Debug: true})
 	_ = godotenv.Load()
-
-	var httpAddr = flag.String("http", ":"+os.Getenv("APP_PORT"), "http listen address")
 
 	fmt.Println("DataBases")
 	dsn := fmt.Sprintf("%s:%s@(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local",
@@ -65,45 +55,27 @@ func main() {
 		os.Exit(-1)
 	}
 
-	var srv user.Service
+	var service user.Service
 	{
 		repository := user.NewRepository(db, log)
-		srv = user.NewService(repository, auth, log)
+		service = user.NewService(repository, auth, log)
+	}
+
+	h := handler.NewHTTPServer(ctx, user.MakeEndpoints(service))
+	port := os.Getenv("APP_PORT")
+	address := fmt.Sprintf("127.0.0.1:%s", port)
+	srv := &http.Server{
+		Handler:      accessControl(h),
+		Addr:         address,
+		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  4 * time.Second,
 	}
 
 	errs := make(chan error)
 
 	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-		errs <- fmt.Errorf("%s", <-c)
-	}()
-
-	mux := http.NewServeMux()
-	mux.Handle("/", handler.NewHTTPServer(ctx, user.MakeEndpoints(srv)))
-
-	http.Handle("/", cors.AllowAll().Handler(accessControl(mux)))
-
-	grpcServer := handler.NewGRPCServer(ctx, user.MakeEndpoints(srv))
-	grpcListener, err := net.Listen("tcp", ":50055")
-	if err != nil {
-		fmt.Println("error ", err)
-		os.Exit(1)
-	}
-
-	go func() {
-		baseServer := grpc.NewServer()
-		fmt.Println("listening on port:50055")
-		userpb.RegisterAuthServiceServer(baseServer, grpcServer)
-
-		reflection.Register(baseServer)
-
-		baseServer.Serve(grpcListener)
-	}()
-
-	go func() {
-		fmt.Println("listening on port", *httpAddr)
-		errs <- http.ListenAndServe(*httpAddr, nil)
+		fmt.Println("listening on port", address)
+		errs <- srv.ListenAndServe()
 	}()
 
 	err = <-errs

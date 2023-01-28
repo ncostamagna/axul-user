@@ -83,13 +83,10 @@ func makeGetEndpoint(service Service) Controller {
 
 		users, err := service.Get(ctx, req.ID, req.Preload)
 		if err != nil {
-			switch err {
-			case NotFound:
-				return nil, NotFound
-			default:
-				return nil, err
+			if err == NotFound {
+				return nil, response.NotFound(err.Error())
 			}
-
+			return nil, response.InternalServerError(err.Error())
 		}
 
 		return response.Success("", users, nil, nil), nil
@@ -103,7 +100,7 @@ func makeGetAllEndpoint(service Service) Controller {
 
 		users, err := service.GetAll(ctx, filters, 0, 0, req.Preload)
 		if err != nil {
-			return nil, response.BadRequest(err.Error())
+			return nil, response.InternalServerError(err.Error())
 		}
 
 		return response.Success("", users, nil, nil), nil
@@ -113,14 +110,14 @@ func makeGetAllEndpoint(service Service) Controller {
 func makeStoreEndpoint(service Service) Controller {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(StoreReq)
+
+		if req.UserName == "" || req.FirstName == "" || req.LastName == "" || req.Password == "" || req.Email == "" {
+			return nil, response.BadRequest("fields required")
+		}
+
 		user, err := service.Create(ctx, req.UserName, req.FirstName, req.LastName, req.Password, req.Email, req.Phone, req.ClientID, req.ClientSecret, req.Token)
 		if err != nil {
-			switch err {
-			case FieldIsRequired:
-				return nil, FieldIsRequired
-			default:
-				return nil, err
-			}
+			return nil, response.InternalServerError(err.Error())
 		}
 
 		return response.Success("success", user, nil, nil), nil
@@ -164,14 +161,15 @@ func makeTokenEndpoint(service Service) Controller {
 		user, err := service.TokenAccess(ctx, req.ID, req.Token)
 
 		if err != nil {
-			switch err {
-			case NotFound:
-				return nil, NotFound
-			case InvalidAuthentication:
-				return nil, InvalidAuthentication
-			default:
-				return nil, err
+			if err == NotFound {
+				return nil, response.NotFound(err.Error())
 			}
+
+			if err == InvalidAuthentication {
+				return nil, response.Unauthorized(err.Error())
+			}
+
+			return nil, response.InternalServerError(err.Error())
 		}
 
 		return response.Success("success", AuthRes{Authorization: 1, User: user}, nil, nil), nil
