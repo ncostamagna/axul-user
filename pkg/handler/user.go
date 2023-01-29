@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 
 	"github.com/digitalhouse-dev/dh-kit/response"
 	"github.com/go-kit/kit/endpoint"
@@ -23,14 +24,14 @@ func NewHTTPServer(_ context.Context, endpoints user.Endpoints) http.Handler {
 
 	r.Use(ginDecode())
 
-	r.GET("/users/{id}/token/{token}", gin.WrapH(httptransport.NewServer(
+	r.GET("/users/:id/token/:token", gin.WrapH(httptransport.NewServer(
 		endpoint.Endpoint(endpoints.Token),
 		decodeTokenHandler,
 		encodeResponse,
 		opts...,
 	)))
 
-	r.GET("/users/{id}", gin.WrapH(httptransport.NewServer(
+	r.GET("/users/:id", gin.WrapH(httptransport.NewServer(
 		endpoint.Endpoint(endpoints.Get),
 		decodeGetHandler,
 		encodeResponse,
@@ -89,7 +90,16 @@ func decodeGetHandler(ctx context.Context, r *http.Request) (interface{}, error)
 }
 
 func decodeGetAllHandler(_ context.Context, r *http.Request) (interface{}, error) {
-	req := user.GetAllReq{}
+	v := r.URL.Query()
+
+	limit, _ := strconv.Atoi(v.Get("limit"))
+	page, _ := strconv.Atoi(v.Get("page"))
+
+	req := user.GetAllReq{
+		UserName: v.Get("username"),
+		Limit:    limit,
+		Page:     page,
+	}
 
 	return req, nil
 }

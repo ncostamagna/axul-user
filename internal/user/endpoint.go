@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"github.com/digitalhouse-dev/dh-kit/meta"
 	"github.com/ncostamagna/axul_domain/domain"
 
 	"github.com/digitalhouse-dev/dh-kit/response"
@@ -21,10 +22,10 @@ type (
 	}
 
 	GetAllReq struct {
-		ID      []string `json:"id"`
-		Preload string   `json:"preload"`
-		Limit   int      `json:"limit"`
-		Page    int      `json:"page"`
+		ID       []string `json:"id"`
+		UserName string   `json:"username"`
+		Limit    int      `json:"limit"`
+		Page     int      `json:"page"`
 	}
 
 	GetReq struct {
@@ -96,14 +97,21 @@ func makeGetEndpoint(service Service) Controller {
 func makeGetAllEndpoint(service Service) Controller {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GetAllReq)
-		filters := Filters{ID: req.ID}
+		filters := Filters{ID: req.ID, UserName: req.UserName}
 
-		users, err := service.GetAll(ctx, filters, 0, 0, req.Preload)
+		count, err := service.Count(ctx, filters)
 		if err != nil {
 			return nil, response.InternalServerError(err.Error())
 		}
 
-		return response.Success("", users, nil, nil), nil
+		meta := meta.New(req.Page, req.Limit, count)
+
+		users, err := service.GetAll(ctx, filters, meta.Offset(), meta.Limit(), "")
+		if err != nil {
+			return nil, response.InternalServerError(err.Error())
+		}
+
+		return response.Success("", users, meta, nil), nil
 	}
 }
 
@@ -127,31 +135,24 @@ func makeStoreEndpoint(service Service) Controller {
 func makeLoginEndpoint(service Service) Controller {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(LoginReq)
-		user, err := service.GetByUserName(ctx, req.UserName)
+
+		users, err := service.GetAll(ctx, Filters{UserName: req.UserName}, 0, 0, "")
+		if len(users) != 1 {
+			return nil, response.Unauthorized(InvalidAuthentication.Error())
+		}
 		if err != nil {
-			switch err {
-			case NotFound:
-				return nil, NotFound
-			case InvalidAuthentication:
-				return nil, InvalidAuthentication
-			default:
-				return nil, err
-			}
+			return nil, response.InternalServerError(err.Error())
 		}
 
-		token, err := service.Login(ctx, user, req.Password)
+		token, err := service.Login(ctx, &users[0], req.Password)
 		if err != nil {
-			switch err {
-			case NotFound:
-				return nil, NotFound
-			case InvalidAuthentication:
-				return nil, InvalidAuthentication
-			default:
-				return nil, err
+			if err == InvalidAuthentication {
+				return nil, response.Unauthorized(err.Error())
 			}
+			return nil, response.InternalServerError(err.Error())
 		}
 
-		return response.Success("success", LoginRes{user, token}, nil, nil), nil
+		return response.Success("success", LoginRes{&users[0], token}, nil, nil), nil
 	}
 }
 

@@ -12,19 +12,20 @@ import (
 )
 
 type Filters struct {
-	ID   []string
-	Days int64
+	ID       []string
+	UserName string
 }
 
 type Service interface {
 	Get(ctx context.Context, id, pload string) (*domain.User, error)
-	GetByUserName(ctx context.Context, username string) (*domain.User, error)
+	//GetByUserName(ctx context.Context, username string) (*domain.User, error)
 	GetAll(ctx context.Context, filters Filters, offset, limit int, pload string) ([]domain.User, error)
 	Create(ctx context.Context, userName, firstName, lastName, password, email, phone, clientID, clientSecret, token string) (*domain.User, error)
 	Update(ctx context.Context, id string) error
 	Delete(ctx context.Context, id string) error
 	Login(ctx context.Context, user *domain.User, password string) (string, error)
 	TokenAccess(ctx context.Context, id, token string) (*domain.User, error)
+	Count(ctx context.Context, filters Filters) (int, error)
 }
 
 type service struct {
@@ -53,6 +54,7 @@ func (s *service) Get(ctx context.Context, id, pload string) (*domain.User, erro
 	return user, nil
 }
 
+/*
 func (s *service) GetByUserName(ctx context.Context, username string) (*domain.User, error) {
 	user, err := s.repo.GetByUserName(ctx, username)
 	if err != nil {
@@ -62,7 +64,7 @@ func (s *service) GetByUserName(ctx context.Context, username string) (*domain.U
 
 	s.logger.DebugMessage(fmt.Sprintf("Get %s User", user.ID))
 	return user, nil
-}
+}*/
 
 func (s *service) GetAll(ctx context.Context, filters Filters, offset, limit int, pload string) ([]domain.User, error) {
 	users, err := s.repo.GetAll(ctx, filters, offset, limit)
@@ -141,4 +143,7 @@ func (s *service) TokenAccess(ctx context.Context, id, token string) (*domain.Us
 
 	return user, nil
 
+}
+func (s service) Count(ctx context.Context, filters Filters) (int, error) {
+	return s.repo.Count(ctx, filters)
 }
