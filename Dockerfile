@@ -1,4 +1,4 @@
-FROM golang:1.15
+FROM golang:1.19
 
 RUN mkdir -p $GOPATH/src/github.com/ncostamagna/axul_user
 WORKDIR $GOPATH/src/github.com/ncostamagna/axul_user
