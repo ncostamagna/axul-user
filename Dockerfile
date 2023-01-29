@@ -6,8 +6,7 @@ WORKDIR $GOPATH/src/github.com/ncostamagna/axul_user
 COPY . .
 RUN ls
 
-RUN go get -d -v ./... 
-RUN go install -v ./...
+RUN go install
 EXPOSE 8082
 
 CMD ["axul_user"]
