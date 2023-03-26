@@ -20,8 +20,9 @@ type Service interface {
 	Get(ctx context.Context, id, pload string) (*domain.User, error)
 	//GetByUserName(ctx context.Context, username string) (*domain.User, error)
 	GetAll(ctx context.Context, filters Filters, offset, limit int, pload string) ([]domain.User, error)
-	Create(ctx context.Context, userName, firstName, lastName, password, email, phone, clientID, clientSecret, token string) (*domain.User, error)
-	Update(ctx context.Context, id string) error
+	Create(ctx context.Context, userName, firstName, lastName, password, email, phone, clientID, clientSecret, token, language string) (*domain.User, error)
+	Update(ctx context.Context, id string, firstname, lastname, email, phone,photo, language *string) error
+	UpdatePassword(ctx context.Context, id, newPassword, oldPassword string) error
 	Delete(ctx context.Context, id string) error
 	Login(ctx context.Context, user *domain.User, password string) (string, error)
 	TokenAccess(ctx context.Context, id, token string) (*domain.User, error)
@@ -76,11 +77,20 @@ func (s *service) GetAll(ctx context.Context, filters Filters, offset, limit int
 	return users, nil
 }
 
-func (s *service) Create(ctx context.Context, userName, firstName, lastName, password, email, phone, clientID, clientSecret, token string) (*domain.User, error) {
+func (s *service) Create(ctx context.Context, userName, firstName, lastName, password, email, phone, clientID, clientSecret, token, language string) (*domain.User, error) {
 
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, s.logger.CatchError(err)
+	}
+
+	var lang domain.Language
+
+	switch domain.Language(language) {
+	case domain.English, domain.Spanish:
+		lang = domain.Language(language)
+	default:
+		lang = domain.English
 	}
 
 	user := domain.User{
@@ -93,6 +103,7 @@ func (s *service) Create(ctx context.Context, userName, firstName, lastName, pas
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		Token:        token,
+		Language: 	  lang,
 	}
 
 	if err := s.repo.Create(ctx, &user); err != nil {
@@ -104,10 +115,50 @@ func (s *service) Create(ctx context.Context, userName, firstName, lastName, pas
 
 }
 
-func (s *service) Update(ctx context.Context, id string) error {
+func (s *service) Update(ctx context.Context, id string, firstname, lastname, email, phone,photo, language *string) error {
+
+	var lang *string
+	if language != nil {
+		switch domain.Language(*language) {
+		case domain.English, domain.Spanish:
+			lang = language
+		default:
+			l := string(domain.English)
+			lang = &l
+		}
+	}
+
+	if err := s.repo.Update(ctx, id, firstname, lastname, email, phone,photo, lang, nil); err != nil {
+		return err
+	}
+
 	return nil
 }
 
+func (s *service) UpdatePassword(ctx context.Context, id, newPassword, oldPassword string) error {
+	user, err := s.repo.Get(ctx, id)
+	if err != nil {
+		_ = s.logger.CatchError(err)
+		return ErrNotFound{id}
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(oldPassword)); err != nil {
+		_ = s.logger.CatchError(err)
+		return InvalidPassword
+	}
+
+	hashPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return s.logger.CatchError(err)
+	}
+	
+	hashNewPassword := string(hashPassword)
+	if err := s.repo.Update(ctx, id, nil, nil, nil, nil, nil, nil, &hashNewPassword); err != nil {
+		return err
+	}
+
+	return nil
+}
 func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }

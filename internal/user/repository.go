@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"fmt"
 	"github.com/digitalhouse-dev/dh-kit/logger"
 	"github.com/google/uuid"
 	"github.com/ncostamagna/axul_domain/domain"
@@ -15,7 +14,7 @@ type Repository interface {
 	Get(ctx context.Context, id string) (*domain.User, error)
 	//GetByUserName(ctx context.Context, username string) (*domain.User, error)
 	Create(ctx context.Context, user *domain.User) error
-	Update(ctx context.Context, id string) error
+	Update(ctx context.Context, id string, firstname, lastname, email, phone,photo, language, password *string) error
 	Delete(ctx context.Context, id string) error
 	Count(ctx context.Context, filters Filters) (int, error)
 }
@@ -75,7 +74,47 @@ func (r *repo) Create(ctx context.Context, user *domain.User) error {
 	return r.db.Create(&user).Error
 }
 
-func (r *repo) Update(ctx context.Context, id string) error {
+func (r *repo) Update(ctx context.Context, id string, firstname, lastname, email, phone,photo, language, password *string) error {
+
+	values := make(map[string]interface{})
+
+	if firstname != nil {
+		values["first_name"] = *firstname
+	}
+
+	if lastname != nil {
+		values["last_name"] = *lastname
+	}
+
+	if email != nil {
+		values["email"] = *email
+	}
+
+	if phone != nil {
+		values["phone"] = *phone
+	}
+
+	if photo != nil {
+		values["photo"] = *photo
+	}
+
+	if language != nil {
+		values["language"] = *language
+	}
+
+	if password != nil {
+		values["password"] = *password
+	}
+
+	result := r.db.WithContext(ctx).Model(&domain.User{}).Where("id = ?", id).Updates(values)
+	if result.Error != nil {
+		return r.logger.CatchError(result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		return ErrNotFound{id}
+	}
+
 	return nil
 }
 
@@ -88,8 +127,7 @@ func (r *repo) Count(ctx context.Context, filters Filters) (int, error) {
 	tx := r.db.WithContext(ctx).Model(domain.User{})
 	tx = applyFilters(tx, filters)
 	if err := tx.Count(&count).Error; err != nil {
-		fmt.Println(err)
-		return 0, err
+		return 0, r.logger.CatchError(err)
 	}
 
 	return int(count), nil

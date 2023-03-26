@@ -9,7 +9,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/joho/godotenv v1.3.0
 	github.com/ncostamagna/axul_auth v1.1.0
-	github.com/ncostamagna/axul_domain v0.0.3
+	github.com/ncostamagna/axul_domain v0.0.4
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
 	gorm.io/driver/mysql v1.4.5
 	gorm.io/gorm v1.24.3

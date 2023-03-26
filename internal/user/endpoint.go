@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/digitalhouse-dev/dh-kit/meta"
 	"github.com/ncostamagna/axul_domain/domain"
-
+"errors"
 	"github.com/digitalhouse-dev/dh-kit/response"
 )
 
@@ -15,6 +15,7 @@ type (
 		LastName     string `json:"lastname"`
 		Password     string `json:"password"`
 		Email        string `json:"email"`
+		Language     string `json:"language"`
 		Phone        string `json:"phone"`
 		ClientID     string `json:"client_id"`
 		ClientSecret string `json:"client_secret"`
@@ -31,6 +32,16 @@ type (
 	GetReq struct {
 		ID      string `json:"id"`
 		Preload string `json:"preload"`
+	}
+
+	UpdateReq struct {
+		ID     string `json:"id"`
+		FirstName    *string `json:"firstname"`
+		LastName     *string `json:"lastname"`
+		Email        *string `json:"email"`
+		Language     *string `json:"language"`
+		Phone        *string `json:"phone"`
+		Photo 		*string `json:"photo"`
 	}
 
 	LoginReq struct {
@@ -123,7 +134,7 @@ func makeStoreEndpoint(service Service) Controller {
 			return nil, response.BadRequest("fields required")
 		}
 
-		user, err := service.Create(ctx, req.UserName, req.FirstName, req.LastName, req.Password, req.Email, req.Phone, req.ClientID, req.ClientSecret, req.Token)
+		user, err := service.Create(ctx, req.UserName, req.FirstName, req.LastName, req.Password, req.Email, req.Phone, req.ClientID, req.ClientSecret, req.Token, req.Language)
 		if err != nil {
 			return nil, response.InternalServerError(err.Error())
 		}
@@ -177,9 +188,31 @@ func makeTokenEndpoint(service Service) Controller {
 	}
 }
 
-func makeUpdateEndpoint(service Service) Controller {
+func makeUpdateEndpoint(s Service) Controller {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(UpdateReq)
 
+		if req.FirstName != nil && *req.FirstName == "" {
+			return nil, response.BadRequest(ErrFirstNameRequired.Error())
+		}
+
+		if req.LastName != nil && *req.LastName == "" {
+			return nil, response.BadRequest(ErrLastNameRequired.Error())
+		}
+
+		if req.Email != nil && *req.Email == "" {
+			return nil, response.BadRequest(ErrEmailRequired.Error())
+		}
+
+		if err := s.Update(ctx, req.ID, req.FirstName, req.LastName, req.Email, req.Phone, req.Photo, req.Language); err != nil {
+
+			if errors.As(err, &ErrNotFound{}) {
+				return nil, response.NotFound(err.Error())
+			}
+	
+			return nil, response.InternalServerError(err.Error())
+		}
+	
 		return response.Success("success", nil, nil, nil), nil
 	}
 }

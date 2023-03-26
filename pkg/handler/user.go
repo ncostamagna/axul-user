@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
-
+"fmt"
 	"github.com/digitalhouse-dev/dh-kit/response"
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -59,6 +59,13 @@ func NewHTTPServer(_ context.Context, endpoints user.Endpoints) http.Handler {
 		opts...,
 	)))
 
+	r.PATCH("/users/:id", gin.WrapH(httptransport.NewServer(
+		endpoint.Endpoint(endpoints.Update),
+		decodeUpdateCourse,
+		encodeResponse,
+		opts...,
+	)))
+
 	return r
 
 }
@@ -100,6 +107,20 @@ func decodeGetAllHandler(_ context.Context, r *http.Request) (interface{}, error
 		Limit:    limit,
 		Page:     page,
 	}
+
+	return req, nil
+}
+
+func decodeUpdateCourse(ctx context.Context, r *http.Request) (interface{}, error) {
+
+	var req user.UpdateReq
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, response.BadRequest(fmt.Sprintf("invalid request format: '%v'", err.Error()))
+	}
+
+	params := ctx.Value("params").(gin.Params)
+	req.ID = params.ByName("id")
 
 	return req, nil
 }
