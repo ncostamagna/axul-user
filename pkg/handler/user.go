@@ -61,7 +61,14 @@ func NewHTTPServer(_ context.Context, endpoints user.Endpoints) http.Handler {
 
 	r.PATCH("/users/:id", gin.WrapH(httptransport.NewServer(
 		endpoint.Endpoint(endpoints.Update),
-		decodeUpdateCourse,
+		decodeUpdate,
+		encodeResponse,
+		opts...,
+	)))
+
+	r.PUT("/users/:id/password", gin.WrapH(httptransport.NewServer(
+		endpoint.Endpoint(endpoints.UpdatePassword),
+		decodeUpdatePassword,
 		encodeResponse,
 		opts...,
 	)))
@@ -111,9 +118,23 @@ func decodeGetAllHandler(_ context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
-func decodeUpdateCourse(ctx context.Context, r *http.Request) (interface{}, error) {
+func decodeUpdate(ctx context.Context, r *http.Request) (interface{}, error) {
 
 	var req user.UpdateReq
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, response.BadRequest(fmt.Sprintf("invalid request format: '%v'", err.Error()))
+	}
+
+	params := ctx.Value("params").(gin.Params)
+	req.ID = params.ByName("id")
+
+	return req, nil
+}
+
+func decodeUpdatePassword(ctx context.Context, r *http.Request) (interface{}, error) {
+
+	var req user.UpdatePasswordReq
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, response.BadRequest(fmt.Sprintf("invalid request format: '%v'", err.Error()))

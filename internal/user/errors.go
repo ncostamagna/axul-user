@@ -13,6 +13,8 @@ var InvalidPassword = errors.New("Invalid password")
 var ErrFirstNameRequired = errors.New("first name is required")
 var ErrLastNameRequired = errors.New("last name is required")
 var ErrEmailRequired = errors.New("email is required")
+var ErrNewPasswordRequired = errors.New("new password is required")
+var ErrOldPasswordRequired = errors.New("old password is required")
 
 type ErrNotFound struct {
 	UserID string

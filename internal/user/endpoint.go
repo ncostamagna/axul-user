@@ -44,6 +44,12 @@ type (
 		Photo 		*string `json:"photo"`
 	}
 
+	UpdatePasswordReq struct {
+		ID     string `json:"id"`
+		OldPassword    string `json:"old_password"`
+		NewPassword     string `json:"new_password"`
+	}
+
 	LoginReq struct {
 		UserName string `json:"username"`
 		Password string `json:"password"`
@@ -74,6 +80,7 @@ type Endpoints struct {
 	Login  Controller
 	Token  Controller
 	Update Controller
+	UpdatePassword Controller
 	Delete Controller
 }
 
@@ -85,6 +92,7 @@ func MakeEndpoints(s Service) Endpoints {
 		Login:  makeLoginEndpoint(s),
 		Token:  makeTokenEndpoint(s),
 		Update: makeUpdateEndpoint(s),
+		UpdatePassword: makeUpdatePasswordEndpoint(s),
 		Delete: makeDeleteEndpoint(s),
 	}
 }
@@ -205,6 +213,36 @@ func makeUpdateEndpoint(s Service) Controller {
 		}
 
 		if err := s.Update(ctx, req.ID, req.FirstName, req.LastName, req.Email, req.Phone, req.Photo, req.Language); err != nil {
+
+			if errors.As(err, &ErrNotFound{}) {
+				return nil, response.NotFound(err.Error())
+			}
+	
+			return nil, response.InternalServerError(err.Error())
+		}
+	
+		return response.Success("success", nil, nil, nil), nil
+	}
+}
+
+func makeUpdatePasswordEndpoint(s Service) Controller {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(UpdatePasswordReq)
+
+		if req.NewPassword == "" {
+			return nil, response.BadRequest(ErrNewPasswordRequired.Error())
+		}
+
+		if req.OldPassword == "" {
+			return nil, response.BadRequest(ErrOldPasswordRequired.Error())
+		}
+
+
+		if err := s.UpdatePassword(ctx, req.ID, req.NewPassword, req.OldPassword); err != nil {
+
+			if err == InvalidPassword {
+				return nil, response.BadRequest(err.Error())
+			}
 
 			if errors.As(err, &ErrNotFound{}) {
 				return nil, response.NotFound(err.Error())
