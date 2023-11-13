@@ -1,4 +1,4 @@
-package user
+package role
 
 import (
 	"errors"

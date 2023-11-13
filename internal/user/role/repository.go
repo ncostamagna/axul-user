@@ -1,22 +1,20 @@
-package user
+package role
 
 import (
 	"context"
-	"github.com/digitalhouse-dev/dh-kit/logger"
-	"github.com/google/uuid"
 	domain "github.com/ncostamagna/axul_domain/domain/user"
 	"gorm.io/gorm"
-	"strings"
+	"github.com/digitalhouse-dev/dh-kit/logger"
+	//"strings"
 )
 
 type Repository interface {
-	GetAll(ctx context.Context, filters Filters, offset, limit int) ([]domain.User, error)
-	Get(ctx context.Context, id string) (*domain.User, error)
-	//GetByUserName(ctx context.Context, username string) (*domain.User, error)
-	Create(ctx context.Context, user *domain.User) error
-	Update(ctx context.Context, id string, firstname, lastname, email, phone, photo, language, password *string) error
-	Delete(ctx context.Context, id string) error
-	Count(ctx context.Context, filters Filters) (int, error)
+	//GetAll(ctx context.Context, filters Filters, offset, limit int) ([]domain.User, error)
+	//Get(ctx context.Context, id string) (*domain.User, error)
+	Create(ctx context.Context, role *domain.Role) error
+	Update(ctx context.Context, userID, app string, role uint64) error
+	//Delete(ctx context.Context, id string) error
+	//Count(ctx context.Context, filters Filters) (int, error)
 }
 
 type repo struct {
@@ -28,6 +26,29 @@ func NewRepository(db *gorm.DB, log logger.Logger) Repository {
 	return &repo{db, log}
 }
 
+func (r *repo) Create(ctx context.Context, role *domain.Role) error {
+	return r.db.Create(&role).Error
+}
+
+func (r *repo) Update(ctx context.Context, userID, app string, role uint64) error {
+	values := make(map[string]interface{})
+
+	if role != nil {
+		values["role"] = *role
+	}
+
+	result := r.db.WithContext(ctx).Model(&domain.Role{}).Where("user_id = ? and app = ?", userID, app).Updates(values)
+	if result.Error != nil {
+		return r.logger.CatchError(result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		return ErrNotFound{id} // user id and app
+	}
+
+	return nil
+}
+/*
 func (r *repo) GetAll(ctx context.Context, filters Filters, offset, limit int) ([]domain.User, error) {
 	var user []domain.User
 
@@ -53,28 +74,10 @@ func (r *repo) Get(ctx context.Context, id string) (*domain.User, error) {
 	}
 
 	return &user, nil
-}
-
-/*
-func (r *repo) GetByUserName(ctx context.Context, username string) (*domain.User, error) {
-	var user domain.User
-	tx := r.db.WithContext(ctx).Model(&user)
-
-	result := tx.Where("user_name = ?", username).First(&user)
-
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	return &user, nil
 }*/
 
-func (r *repo) Create(ctx context.Context, user *domain.User) error {
-	user.ID = uuid.New().String()
-	return r.db.Create(&user).Error
-}
-
-func (r *repo) Update(ctx context.Context, id string, firstname, lastname, email, phone, photo, language, password *string) error {
+/*
+func (r *repo) Update(ctx context.Context, id string, firstname, lastname, email, phone,photo, language, password *string) error {
 
 	values := make(map[string]interface{})
 
@@ -141,3 +144,4 @@ func applyFilters(tx *gorm.DB, f Filters) *gorm.DB {
 
 	return tx
 }
+*/
