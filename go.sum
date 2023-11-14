@@ -146,6 +146,8 @@ github.com/ncostamagna/axul_auth v1.1.0 h1:JHeLx5i/apLEoPCOPxnxLcvh4Z7KRMOmIThIc
 github.com/ncostamagna/axul_auth v1.1.0/go.mod h1:48DDY1L7Vj4W9xk87blCedNBIC9WOyc7H5U8z6EqdLA=
 github.com/ncostamagna/axul_domain v0.0.5 h1:OayLvh8agSu/jdc4rORNg2Q80vgW5mCRQcYy+EvLFfc=
 github.com/ncostamagna/axul_domain v0.0.5/go.mod h1:U500vm7pNQN6z95G5zvF+ecdCEWUuEWg1c2xOVKvLzk=
+github.com/ncostamagna/axul_domain v0.0.6 h1:EjV2AX5mpcoiddDQ4l3Tv6pE26WQbY7ZIVoSuyckjcw=
+github.com/ncostamagna/axul_domain v0.0.6/go.mod h1:IbHm2VphdPLCCuxmZEgXPCFB0Z06wXI7JfuDex3wpmM=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.10.3/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/gomega v1.7.1/go.mod h1:XdKZgCCFLUoM/7CFJVPcG8C1xQ1AJ0vpAezJrB7JYyY=
