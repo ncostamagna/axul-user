@@ -3,22 +3,28 @@ package role
 import (
 	"context"
 	"fmt"
-	domain "github.com/ncostamagna/axul_domain/domain/user"
-	//authentication "github.com/ncostamagna/axul_auth/auth"
-	"github.com/ncostamagna/axul_user/internal/user"
 	"github.com/digitalhouse-dev/dh-kit/logger"
+	domain "github.com/ncostamagna/axul_domain/domain/user"
+	"github.com/ncostamagna/axul_user/internal/user"
 )
+
+type Filters struct {
+	UserID []string
+	App    []string
+}
 
 type Service interface {
 	Create(ctx context.Context, userId, app string) (*domain.Role, error)
-	//Store(ctx context.Context, id string, application, roles []string) (*domain.User, error)
+	AddRole(ctx context.Context, userId, app string, roles []string) error
+	GetAll(ctx context.Context, filters Filters, offset, limit int, pload string) ([]domain.Role, error)
+	Count(ctx context.Context, filters Filters) (int, error)
 }
 
 type service struct {
 	repo    Repository
 	userSrv user.Service
 	//auth    authentication.Auth
-	logger  logger.Logger
+	logger logger.Logger
 }
 
 // NewService is a service handler
@@ -44,4 +50,38 @@ func (s *service) Create(ctx context.Context, userId, app string) (*domain.Role,
 
 	return &role, nil
 
+}
+
+func (s *service) AddRole(ctx context.Context, userId, app string, roles []string) error {
+
+	role := domain.Role{
+		UserID: userId,
+		App:    app,
+	}
+
+	for _, r := range roles {
+		if err := role.AddRole(r); err != nil {
+			return InvalidRole{r}
+		}
+	}
+
+	if err := s.repo.Update(ctx, role.UserID, role.App, &role.Role); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (s *service) GetAll(ctx context.Context, filters Filters, offset, limit int, pload string) ([]domain.Role, error) {
+	roles, err := s.repo.GetAll(ctx, filters, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	return roles, nil
+}
+
+func (s service) Count(ctx context.Context, filters Filters) (int, error) {
+	return s.repo.Count(ctx, filters)
 }

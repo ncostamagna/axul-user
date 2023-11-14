@@ -3,13 +3,13 @@ package role
 import (
 	"context"
 	//domain "github.com/ncostamagna/axul_domain/domain/user"
-	//"errors"
+	"errors"
 	"github.com/digitalhouse-dev/dh-kit/response"
 	// auth "github.com/ncostamagna/axul_auth/auth"
 )
 
 type (
-	CreateReq struct {
+	AppReq struct {
 		ID  string `json:"id"`
 		App string `json:"app"`
 	}
@@ -31,24 +31,25 @@ type Controller func(ctx context.Context, request interface{}) (interface{}, err
 
 // Endpoints struct
 type Endpoints struct {
-	Create Controller
-	AddRoles  Controller
+	Create   Controller
+	AddRoles Controller
+	GetRole  Controller
 }
 
 func MakeEndpoints(s Service) Endpoints {
 	return Endpoints{
-		Create: makeCreateEndpoint(s),
-		AddRoles:  makeAddRolesEndpoint(s),
+		Create:   makeCreateEndpoint(s),
+		AddRoles: makeAddRolesEndpoint(s),
+		GetRole:  makeGetRolesEndpoint(s),
 	}
 }
 
 func makeCreateEndpoint(service Service) Controller {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(CreateReq)
+		req := request.(AppReq)
 
-
-		if req.App == "" || req.ID == ""{
-			return nil, response.BadRequest("app and user id are required")
+		if req.App == "" || req.ID == "" {
+			return nil, response.BadRequest(ErrUserIDAndAppAreRequired.Error())
 		}
 
 		role, err := service.Create(ctx, req.ID, req.App)
@@ -63,17 +64,44 @@ func makeCreateEndpoint(service Service) Controller {
 func makeAddRolesEndpoint(service Service) Controller {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AddRoles)
+		if req.App == "" || req.ID == "" {
+			return nil, response.BadRequest(ErrUserIDAndAppAreRequired.Error())
+		}
 
-		/*
-			if req.UserName == "" || req.FirstName == "" || req.LastName == "" || req.Password == "" || req.Email == "" {
-				return nil, response.BadRequest("fields required")
+		if err := service.AddRole(ctx, req.ID, req.App, req.Roles); err != nil {
+			if errors.As(err, &InvalidRole{}) {
+				return nil, response.BadRequest(err.Error())
 			}
-
-			user, err := service.Create(ctx, req.UserName, req.FirstName, req.LastName, req.Password, req.Email, req.Phone, req.ClientID, req.ClientSecret, req.Token, req.Language)
-			if err != nil {
-				return nil, response.InternalServerError(err.Error())
-			}*/
+			return nil, response.InternalServerError(err.Error())
+		}
 
 		return response.Success("success", req, nil, nil), nil
+	}
+}
+
+func makeGetRolesEndpoint(service Service) Controller {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(AppReq)
+
+		if req.App == "" || req.ID == "" {
+			return nil, response.BadRequest(ErrUserIDAndAppAreRequired.Error())
+		}
+
+		f := Filters{
+			UserID: []string{req.ID},
+			App:    []string{req.App},
+		}
+
+		roles, err := service.GetAll(ctx, f, 0, 0, "")
+		if err != nil {
+			return nil, response.InternalServerError(err.Error())
+		}
+		if len(roles) < 1 {
+			return nil, response.NotFound(ErrUserAppNotFound{
+				req.ID, req.App,
+			}.Error())
+		}
+
+		return response.Success("success", roles[0], nil, nil), nil
 	}
 }

@@ -32,12 +32,26 @@ func NewHTTPRolesServer(_ context.Context, r http.Handler, endpoints role.Endpoi
 		opts...,
 	)))
 
+	router.PUT("/users/:id/apps/:app", gin.WrapH(httptransport.NewServer(
+		endpoint.Endpoint(endpoints.AddRoles),
+		decodeAddRoleHandler,
+		encodeResponse,
+		opts...,
+	)))
+
+	router.GET("/users/:id/apps/:app", gin.WrapH(httptransport.NewServer(
+		endpoint.Endpoint(endpoints.GetRole),
+		decodeGetRoleHandler,
+		encodeResponse,
+		opts...,
+	)))
+
 	return router
 
 }
 
 func decodeAppStoreHandler(ctx context.Context, r *http.Request) (interface{}, error) {
-	var req role.CreateReq
+	var req role.AppReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, response.BadRequest(fmt.Sprintf("invalid request format: '%v'", err.Error()))
 	}
@@ -45,5 +59,26 @@ func decodeAppStoreHandler(ctx context.Context, r *http.Request) (interface{}, e
 	pp := ctx.Value("params").(gin.Params)
 	req.ID = pp.ByName("id")
 
+	return req, nil
+}
+
+func decodeAddRoleHandler(ctx context.Context, r *http.Request) (interface{}, error) {
+	var req role.AddRoles
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, response.BadRequest(fmt.Sprintf("invalid request format: '%v'", err.Error()))
+	}
+
+	pp := ctx.Value("params").(gin.Params)
+	req.ID = pp.ByName("id")
+	req.App = pp.ByName("app")
+	return req, nil
+}
+
+func decodeGetRoleHandler(ctx context.Context, r *http.Request) (interface{}, error) {
+	var req role.AppReq
+
+	pp := ctx.Value("params").(gin.Params)
+	req.ID = pp.ByName("id")
+	req.App = pp.ByName("app")
 	return req, nil
 }
