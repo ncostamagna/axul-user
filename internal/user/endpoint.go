@@ -2,10 +2,11 @@ package user
 
 import (
 	"context"
+	"errors"
 	"github.com/digitalhouse-dev/dh-kit/meta"
-	"github.com/ncostamagna/axul_domain/domain"
-"errors"
 	"github.com/digitalhouse-dev/dh-kit/response"
+	auth "github.com/ncostamagna/axul_auth/auth"
+	domain "github.com/ncostamagna/axul_domain/domain/user"
 )
 
 type (
@@ -35,19 +36,19 @@ type (
 	}
 
 	UpdateReq struct {
-		ID     string `json:"id"`
-		FirstName    *string `json:"firstname"`
-		LastName     *string `json:"lastname"`
-		Email        *string `json:"email"`
-		Language     *string `json:"language"`
-		Phone        *string `json:"phone"`
-		Photo 		*string `json:"photo"`
+		ID        string  `json:"id"`
+		FirstName *string `json:"firstname"`
+		LastName  *string `json:"lastname"`
+		Email     *string `json:"email"`
+		Language  *string `json:"language"`
+		Phone     *string `json:"phone"`
+		Photo     *string `json:"photo"`
 	}
 
 	UpdatePasswordReq struct {
-		ID     string `json:"id"`
-		OldPassword    string `json:"old_password"`
-		NewPassword     string `json:"new_password"`
+		ID          string `json:"id"`
+		OldPassword string `json:"old_password"`
+		NewPassword string `json:"new_password"`
 	}
 
 	LoginReq struct {
@@ -74,26 +75,26 @@ type Controller func(ctx context.Context, request interface{}) (interface{}, err
 
 // Endpoints struct
 type Endpoints struct {
-	Get    Controller
-	GetAll Controller
-	Store  Controller
-	Login  Controller
-	Token  Controller
-	Update Controller
+	Get            Controller
+	GetAll         Controller
+	Store          Controller
+	Login          Controller
+	Token          Controller
+	Update         Controller
 	UpdatePassword Controller
-	Delete Controller
+	Delete         Controller
 }
 
 func MakeEndpoints(s Service) Endpoints {
 	return Endpoints{
-		Get:    makeGetEndpoint(s),
-		GetAll: makeGetAllEndpoint(s),
-		Store:  makeStoreEndpoint(s),
-		Login:  makeLoginEndpoint(s),
-		Token:  makeTokenEndpoint(s),
-		Update: makeUpdateEndpoint(s),
+		Get:            makeGetEndpoint(s),
+		GetAll:         makeGetAllEndpoint(s),
+		Store:          makeStoreEndpoint(s),
+		Login:          makeLoginEndpoint(s),
+		Token:          makeTokenEndpoint(s),
+		Update:         makeUpdateEndpoint(s),
 		UpdatePassword: makeUpdatePasswordEndpoint(s),
-		Delete: makeDeleteEndpoint(s),
+		Delete:         makeDeleteEndpoint(s),
 	}
 }
 
@@ -185,7 +186,7 @@ func makeTokenEndpoint(service Service) Controller {
 				return nil, response.NotFound(err.Error())
 			}
 
-			if err == InvalidAuthentication {
+			if err == InvalidAuthentication || err == auth.ErrInvalidAuthentication {
 				return nil, response.Unauthorized(err.Error())
 			}
 
@@ -217,10 +218,10 @@ func makeUpdateEndpoint(s Service) Controller {
 			if errors.As(err, &ErrNotFound{}) {
 				return nil, response.NotFound(err.Error())
 			}
-	
+
 			return nil, response.InternalServerError(err.Error())
 		}
-	
+
 		return response.Success("success", nil, nil, nil), nil
 	}
 }
@@ -237,7 +238,6 @@ func makeUpdatePasswordEndpoint(s Service) Controller {
 			return nil, response.BadRequest(ErrOldPasswordRequired.Error())
 		}
 
-
 		if err := s.UpdatePassword(ctx, req.ID, req.NewPassword, req.OldPassword); err != nil {
 
 			if err == InvalidPassword {
@@ -247,10 +247,10 @@ func makeUpdatePasswordEndpoint(s Service) Controller {
 			if errors.As(err, &ErrNotFound{}) {
 				return nil, response.NotFound(err.Error())
 			}
-	
+
 			return nil, response.InternalServerError(err.Error())
 		}
-	
+
 		return response.Success("success", nil, nil, nil), nil
 	}
 }

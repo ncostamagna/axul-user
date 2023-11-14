@@ -3,7 +3,7 @@ package user
 import (
 	"context"
 	"fmt"
-	"github.com/ncostamagna/axul_domain/domain"
+	domain "github.com/ncostamagna/axul_domain/domain/user"
 
 	authentication "github.com/ncostamagna/axul_auth/auth"
 
@@ -21,7 +21,7 @@ type Service interface {
 	//GetByUserName(ctx context.Context, username string) (*domain.User, error)
 	GetAll(ctx context.Context, filters Filters, offset, limit int, pload string) ([]domain.User, error)
 	Create(ctx context.Context, userName, firstName, lastName, password, email, phone, clientID, clientSecret, token, language string) (*domain.User, error)
-	Update(ctx context.Context, id string, firstname, lastname, email, phone,photo, language *string) error
+	Update(ctx context.Context, id string, firstname, lastname, email, phone, photo, language *string) error
 	UpdatePassword(ctx context.Context, id, newPassword, oldPassword string) error
 	Delete(ctx context.Context, id string) error
 	Login(ctx context.Context, user *domain.User, password string) (string, error)
@@ -54,18 +54,6 @@ func (s *service) Get(ctx context.Context, id, pload string) (*domain.User, erro
 	s.logger.DebugMessage(fmt.Sprintf("Get %s User", user.ID))
 	return user, nil
 }
-
-/*
-func (s *service) GetByUserName(ctx context.Context, username string) (*domain.User, error) {
-	user, err := s.repo.GetByUserName(ctx, username)
-	if err != nil {
-		_ = s.logger.CatchError(err)
-		return nil, NotFound
-	}
-
-	s.logger.DebugMessage(fmt.Sprintf("Get %s User", user.ID))
-	return user, nil
-}*/
 
 func (s *service) GetAll(ctx context.Context, filters Filters, offset, limit int, pload string) ([]domain.User, error) {
 	users, err := s.repo.GetAll(ctx, filters, offset, limit)
@@ -103,7 +91,7 @@ func (s *service) Create(ctx context.Context, userName, firstName, lastName, pas
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		Token:        token,
-		Language: 	  lang,
+		Language:     lang,
 	}
 
 	if err := s.repo.Create(ctx, &user); err != nil {
@@ -115,7 +103,7 @@ func (s *service) Create(ctx context.Context, userName, firstName, lastName, pas
 
 }
 
-func (s *service) Update(ctx context.Context, id string, firstname, lastname, email, phone,photo, language *string) error {
+func (s *service) Update(ctx context.Context, id string, firstname, lastname, email, phone, photo, language *string) error {
 
 	var lang *string
 	if language != nil {
@@ -128,7 +116,7 @@ func (s *service) Update(ctx context.Context, id string, firstname, lastname, em
 		}
 	}
 
-	if err := s.repo.Update(ctx, id, firstname, lastname, email, phone,photo, lang, nil); err != nil {
+	if err := s.repo.Update(ctx, id, firstname, lastname, email, phone, photo, lang, nil); err != nil {
 		return err
 	}
 
@@ -151,7 +139,7 @@ func (s *service) UpdatePassword(ctx context.Context, id, newPassword, oldPasswo
 	if err != nil {
 		return s.logger.CatchError(err)
 	}
-	
+
 	hashNewPassword := string(hashPassword)
 	if err := s.repo.Update(ctx, id, nil, nil, nil, nil, nil, nil, &hashNewPassword); err != nil {
 		return err
@@ -170,7 +158,7 @@ func (s *service) Login(ctx context.Context, user *domain.User, password string)
 		return "", InvalidAuthentication
 	}
 
-	token, err := s.auth.Create(user.ID, user.UserName, 0)
+	token, err := s.auth.Create(user.ID, user.UserName, 60)
 	if err != nil {
 		_ = s.logger.CatchError(err)
 		return "", InvalidAuthentication

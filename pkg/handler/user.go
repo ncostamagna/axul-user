@@ -3,14 +3,14 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
-	"net/http"
-	"strconv"
-"fmt"
+	"fmt"
 	"github.com/digitalhouse-dev/dh-kit/response"
+	"github.com/gin-gonic/gin"
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/ncostamagna/axul_user/internal/user"
+	"net/http"
+	"strconv"
 )
 
 // NewHTTPServer is a server handler

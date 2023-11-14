@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/digitalhouse-dev/dh-kit/logger"
 	"github.com/google/uuid"
-	"github.com/ncostamagna/axul_domain/domain"
+	domain "github.com/ncostamagna/axul_domain/domain/user"
 	"gorm.io/gorm"
 	"strings"
 )
@@ -14,7 +14,7 @@ type Repository interface {
 	Get(ctx context.Context, id string) (*domain.User, error)
 	//GetByUserName(ctx context.Context, username string) (*domain.User, error)
 	Create(ctx context.Context, user *domain.User) error
-	Update(ctx context.Context, id string, firstname, lastname, email, phone,photo, language, password *string) error
+	Update(ctx context.Context, id string, firstname, lastname, email, phone, photo, language, password *string) error
 	Delete(ctx context.Context, id string) error
 	Count(ctx context.Context, filters Filters) (int, error)
 }
@@ -74,7 +74,7 @@ func (r *repo) Create(ctx context.Context, user *domain.User) error {
 	return r.db.Create(&user).Error
 }
 
-func (r *repo) Update(ctx context.Context, id string, firstname, lastname, email, phone,photo, language, password *string) error {
+func (r *repo) Update(ctx context.Context, id string, firstname, lastname, email, phone, photo, language, password *string) error {
 
 	values := make(map[string]interface{})
 

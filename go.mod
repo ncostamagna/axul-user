@@ -1,6 +1,6 @@
 module github.com/ncostamagna/axul_user
 
-go 1.19
+go 1.21
 
 require (
 	github.com/digitalhouse-dev/dh-kit v0.1.0
@@ -9,10 +9,10 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/joho/godotenv v1.3.0
 	github.com/ncostamagna/axul_auth v1.1.0
-	github.com/ncostamagna/axul_domain v0.0.4
+	github.com/ncostamagna/axul_domain v0.0.6
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
-	gorm.io/driver/mysql v1.4.5
-	gorm.io/gorm v1.24.3
+	gorm.io/driver/mysql v1.5.2
+	gorm.io/gorm v1.25.5
 )
 
 require (

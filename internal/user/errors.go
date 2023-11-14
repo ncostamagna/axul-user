@@ -3,7 +3,7 @@ package user
 import (
 	"errors"
 	"fmt"
-	)
+)
 
 var NotFound = errors.New("Record not found")
 var FieldIsRequired = errors.New("Required values")
