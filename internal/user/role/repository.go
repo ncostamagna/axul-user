@@ -2,10 +2,9 @@ package role
 
 import (
 	"context"
-	"github.com/digitalhouse-dev/dh-kit/logger"
 	domain "github.com/ncostamagna/axul_domain/domain/user"
 	"gorm.io/gorm"
-	//"strings"
+	"log/slog"
 )
 
 type Repository interface {
@@ -19,10 +18,10 @@ type Repository interface {
 
 type repo struct {
 	db     *gorm.DB
-	logger logger.Logger
+	logger *slog.Logger
 }
 
-func NewRepository(db *gorm.DB, log logger.Logger) Repository {
+func NewRepository(db *gorm.DB, log *slog.Logger) Repository {
 	return &repo{db, log}
 }
 
@@ -38,8 +37,9 @@ func (r *repo) Update(ctx context.Context, userID, app string, role *uint64) err
 	}
 
 	result := r.db.WithContext(ctx).Model(&domain.Role{}).Where("user_id = ? and app = ?", userID, app).Updates(values)
-	if result.Error != nil {
-		return r.logger.CatchError(result.Error)
+	if err := result.Error; err != nil {
+		r.logger.Error(err.Error())
+		return err
 	}
 
 	if result.RowsAffected == 0 {
@@ -56,8 +56,9 @@ func (r *repo) GetAll(ctx context.Context, filters Filters, offset, limit int) (
 	applyFilters(tx, filters)
 	result := tx.Order("created_at desc").Find(&role)
 
-	if result.Error != nil {
-		return nil, r.logger.CatchError(result.Error)
+	if err := result.Error; err != nil {
+		r.logger.Error(err.Error())
+		return nil, err
 	}
 
 	return role, nil
@@ -68,7 +69,8 @@ func (r *repo) Count(ctx context.Context, filters Filters) (int, error) {
 	tx := r.db.WithContext(ctx).Model(domain.Role{})
 	tx = applyFilters(tx, filters)
 	if err := tx.Count(&count).Error; err != nil {
-		return 0, r.logger.CatchError(err)
+		r.logger.Error(err.Error())
+		return 0, err
 	}
 
 	return int(count), nil

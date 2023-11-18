@@ -2,7 +2,7 @@ package user
 
 import (
 	"context"
-	"github.com/digitalhouse-dev/dh-kit/logger"
+	"log/slog"
 	"github.com/google/uuid"
 	domain "github.com/ncostamagna/axul_domain/domain/user"
 	"gorm.io/gorm"
@@ -21,11 +21,11 @@ type Repository interface {
 
 type repo struct {
 	db     *gorm.DB
-	logger logger.Logger
+	logger *slog.Logger
 }
 
-func NewRepository(db *gorm.DB, log logger.Logger) Repository {
-	return &repo{db, log}
+func NewRepository(db *gorm.DB, logger *slog.Logger) Repository {
+	return &repo{db, logger}
 }
 
 func (r *repo) GetAll(ctx context.Context, filters Filters, offset, limit int) ([]domain.User, error) {
@@ -108,7 +108,8 @@ func (r *repo) Update(ctx context.Context, id string, firstname, lastname, email
 
 	result := r.db.WithContext(ctx).Model(&domain.User{}).Where("id = ?", id).Updates(values)
 	if result.Error != nil {
-		return r.logger.CatchError(result.Error)
+		r.logger.Error(result.Error.Error())
+		return result.Error
 	}
 
 	if result.RowsAffected == 0 {
@@ -127,7 +128,8 @@ func (r *repo) Count(ctx context.Context, filters Filters) (int, error) {
 	tx := r.db.WithContext(ctx).Model(domain.User{})
 	tx = applyFilters(tx, filters)
 	if err := tx.Count(&count).Error; err != nil {
-		return 0, r.logger.CatchError(err)
+		r.logger.Error(err.Error())
+		return 0, err
 	}
 
 	return int(count), nil

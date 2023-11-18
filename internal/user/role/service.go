@@ -3,9 +3,9 @@ package role
 import (
 	"context"
 	"fmt"
-	"github.com/digitalhouse-dev/dh-kit/logger"
 	domain "github.com/ncostamagna/axul_domain/domain/user"
 	"github.com/ncostamagna/axul_user/internal/user"
+	"log/slog"
 )
 
 type Filters struct {
@@ -24,11 +24,11 @@ type service struct {
 	repo    Repository
 	userSrv user.Service
 	//auth    authentication.Auth
-	logger logger.Logger
+	logger *slog.Logger
 }
 
 // NewService is a service handler
-func NewService(repo Repository, userSrv user.Service, logger logger.Logger) Service {
+func NewService(repo Repository, userSrv user.Service, logger *slog.Logger) Service {
 	return &service{
 		repo:    repo,
 		userSrv: userSrv,
@@ -44,9 +44,10 @@ func (s *service) Create(ctx context.Context, userId, app string) (*domain.Role,
 	}
 
 	if err := s.repo.Create(ctx, &role); err != nil {
-		return nil, s.logger.CatchError(err)
+		s.logger.Error(err.Error())
+		return nil, err
 	}
-	s.logger.DebugMessage(fmt.Sprintf("Create %s Role", role.ID))
+	s.logger.Debug(fmt.Sprintf("Create %s Role", role.ID))
 
 	return &role, nil
 

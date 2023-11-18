@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/digitalhouse-dev/dh-kit/logger"
 	"github.com/joho/godotenv"
 	authentication "github.com/ncostamagna/axul_auth/auth"
 	"github.com/ncostamagna/axul_user/internal/user"
@@ -19,14 +18,17 @@ import (
 
 func main() {
 
-	fmt.Println("Initial")
-	var log = logger.New(logger.LogOption{Debug: true})
+	slog, err := bootstrap.NewLogger()
+	if err != nil {
+		panic(err)
+	}
+
 	_ = godotenv.Load()
 
-	fmt.Println("DataBases")
+	slog.Info("DataBases")
 	db, err := bootstrap.DBConnection()
 	if err != nil {
-		_ = log.CatchError(err)
+		slog.Error(err.Error())
 		os.Exit(-1)
 	}
 
@@ -36,20 +38,20 @@ func main() {
 	token := os.Getenv("TOKEN")
 	auth, err := authentication.New(token)
 	if err != nil {
-		_ = log.CatchError(err)
+		slog.Error(err.Error())
 		os.Exit(-1)
 	}
 
 	var service user.Service
 	{
-		repository := user.NewRepository(db, log)
-		service = user.NewService(repository, auth, log)
+		repository := user.NewRepository(db, slog)
+		service = user.NewService(repository, auth, slog)
 	}
 
 	var roleService role.Service
 	{
-		repository := role.NewRepository(db, log)
-		roleService = role.NewService(repository, service, log)
+		repository := role.NewRepository(db, slog)
+		roleService = role.NewService(repository, service, slog)
 	}
 	h := handler.NewHTTPServer(ctx, user.MakeEndpoints(service))
 	h = handler.NewHTTPRolesServer(ctx, h, role.MakeEndpoints(roleService))
@@ -65,13 +67,13 @@ func main() {
 	errs := make(chan error)
 
 	go func() {
-		fmt.Println("listening on", url)
+		slog.Info(fmt.Sprintf("listening on %s", url))
 		errs <- srv.ListenAndServe()
 	}()
 
 	err = <-errs
 	if err != nil {
-		_ = log.CatchError(err)
+		slog.Error(err.Error())
 	}
 
 }
