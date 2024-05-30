@@ -3,10 +3,10 @@ package user
 import (
 	"context"
 	"errors"
-	"github.com/digitalhouse-dev/dh-kit/meta"
-	"github.com/digitalhouse-dev/dh-kit/response"
 	auth "github.com/ncostamagna/axul_auth/auth"
 	domain "github.com/ncostamagna/axul_domain/domain/user"
+	"github.com/ncostamagna/go-http-utils/meta"
+	"github.com/ncostamagna/go-http-utils/response"
 )
 
 type (
@@ -69,6 +69,10 @@ type (
 		Authorization int32        `json:"authorization"`
 		User          *domain.User `json:"user"`
 	}
+
+	Config struct {
+		LimPageDef string
+	}
 )
 
 type Controller func(ctx context.Context, request interface{}) (interface{}, error)
@@ -85,10 +89,10 @@ type Endpoints struct {
 	Delete         Controller
 }
 
-func MakeEndpoints(s Service) Endpoints {
+func MakeEndpoints(s Service, config Config) Endpoints {
 	return Endpoints{
 		Get:            makeGetEndpoint(s),
-		GetAll:         makeGetAllEndpoint(s),
+		GetAll:         makeGetAllEndpoint(s, config),
 		Store:          makeStoreEndpoint(s),
 		Login:          makeLoginEndpoint(s),
 		Token:          makeTokenEndpoint(s),
@@ -110,11 +114,11 @@ func makeGetEndpoint(service Service) Controller {
 			return nil, response.InternalServerError(err.Error())
 		}
 
-		return response.Success("", users, nil, nil), nil
+		return response.OK("", users, nil), nil
 	}
 }
 
-func makeGetAllEndpoint(service Service) Controller {
+func makeGetAllEndpoint(service Service, config Config) Controller {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GetAllReq)
 		filters := Filters{ID: req.ID, UserName: req.UserName}
@@ -124,14 +128,17 @@ func makeGetAllEndpoint(service Service) Controller {
 			return nil, response.InternalServerError(err.Error())
 		}
 
-		meta := meta.New(req.Page, req.Limit, count)
+		meta, err := meta.New(req.Page, req.Limit, count, config.LimPageDef)
+		if err != nil {
+			return nil, response.InternalServerError(err.Error())
+		}
 
 		users, err := service.GetAll(ctx, filters, meta.Offset(), meta.Limit(), "")
 		if err != nil {
 			return nil, response.InternalServerError(err.Error())
 		}
 
-		return response.Success("", users, meta, nil), nil
+		return response.OK("", users, meta), nil
 	}
 }
 
@@ -148,7 +155,7 @@ func makeStoreEndpoint(service Service) Controller {
 			return nil, response.InternalServerError(err.Error())
 		}
 
-		return response.Success("success", user, nil, nil), nil
+		return response.Created("", user, nil), nil
 	}
 }
 
@@ -172,7 +179,7 @@ func makeLoginEndpoint(service Service) Controller {
 			return nil, response.InternalServerError(err.Error())
 		}
 
-		return response.Success("success", LoginRes{&users[0], token}, nil, nil), nil
+		return response.OK("", LoginRes{&users[0], token}, nil), nil
 	}
 }
 
@@ -193,7 +200,7 @@ func makeTokenEndpoint(service Service) Controller {
 			return nil, response.InternalServerError(err.Error())
 		}
 
-		return response.Success("success", AuthRes{Authorization: 1, User: user}, nil, nil), nil
+		return response.OK("", AuthRes{Authorization: 1, User: user}, nil), nil
 	}
 }
 
@@ -222,7 +229,7 @@ func makeUpdateEndpoint(s Service) Controller {
 			return nil, response.InternalServerError(err.Error())
 		}
 
-		return response.Success("success", nil, nil, nil), nil
+		return response.OK("", nil, nil), nil
 	}
 }
 
@@ -251,13 +258,13 @@ func makeUpdatePasswordEndpoint(s Service) Controller {
 			return nil, response.InternalServerError(err.Error())
 		}
 
-		return response.Success("success", nil, nil, nil), nil
+		return response.OK("", nil, nil), nil
 	}
 }
 
 func makeDeleteEndpoint(service Service) Controller {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 
-		return response.Success("", nil, nil, nil), nil
+		return response.OK("", nil, nil), nil
 	}
 }

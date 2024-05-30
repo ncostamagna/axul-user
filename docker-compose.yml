@@ -1,14 +1,14 @@
 version: "3.5"
 services:
-  axul_database:
+  axul_users_database:
     platform: linux/amd64
-    container_name: axul_database
+    container_name: axul_users_database
     build:
       context: ./docker/mysql
       dockerfile: Dockerfile
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: axul_user
+      MYSQL_DATABASE: axul-user
     ports:
       - "3323:3306"
     volumes:

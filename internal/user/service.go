@@ -7,8 +7,8 @@ import (
 
 	authentication "github.com/ncostamagna/axul_auth/auth"
 
-	"log/slog"
 	"golang.org/x/crypto/bcrypt"
+	"log/slog"
 )
 
 type Filters struct {

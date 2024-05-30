@@ -3,8 +3,8 @@ package role
 import (
 	"context"
 	"fmt"
+	"github.com/ncostamagna/axul-user/internal/user"
 	domain "github.com/ncostamagna/axul_domain/domain/user"
-	"github.com/ncostamagna/axul_user/internal/user"
 	"log/slog"
 )
 

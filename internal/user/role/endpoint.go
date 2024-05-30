@@ -4,7 +4,7 @@ import (
 	"context"
 	//domain "github.com/ncostamagna/axul_domain/domain/user"
 	"errors"
-	"github.com/digitalhouse-dev/dh-kit/response"
+	"github.com/ncostamagna/go-http-utils/response"
 	// auth "github.com/ncostamagna/axul_auth/auth"
 )
 
@@ -57,7 +57,7 @@ func makeCreateEndpoint(service Service) Controller {
 			return nil, response.InternalServerError(err.Error())
 		}
 
-		return response.Success("success", role, nil, nil), nil
+		return response.Created("", role, nil), nil
 	}
 }
 
@@ -75,7 +75,7 @@ func makeAddRolesEndpoint(service Service) Controller {
 			return nil, response.InternalServerError(err.Error())
 		}
 
-		return response.Success("success", req, nil, nil), nil
+		return response.OK("", req, nil), nil
 	}
 }
 
@@ -102,6 +102,6 @@ func makeGetRolesEndpoint(service Service) Controller {
 			}.Error())
 		}
 
-		return response.Success("success", roles[0], nil, nil), nil
+		return response.OK("", roles[0], nil), nil
 	}
 }

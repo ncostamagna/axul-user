@@ -1,3 +1,3 @@
 
 
-CREATE DATABASE IF NOT EXISTS `axul_user`;
+CREATE DATABASE IF NOT EXISTS `axul-user`;

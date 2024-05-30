@@ -2,11 +2,11 @@ package main
 
 import (
 	"github.com/joho/godotenv"
+	"github.com/ncostamagna/axul-user/internal/user"
+	"github.com/ncostamagna/axul-user/internal/user/role"
+	"github.com/ncostamagna/axul-user/pkg/bootstrap"
+	"github.com/ncostamagna/axul-user/pkg/handler"
 	authentication "github.com/ncostamagna/axul_auth/auth"
-	"github.com/ncostamagna/axul_user/internal/user"
-	"github.com/ncostamagna/axul_user/internal/user/role"
-	"github.com/ncostamagna/axul_user/pkg/bootstrap"
-	"github.com/ncostamagna/axul_user/pkg/handler"
 	"time"
 
 	"context"
@@ -53,10 +53,18 @@ func main() {
 		repository := role.NewRepository(db, slog)
 		roleService = role.NewService(repository, service, slog)
 	}
-	h := handler.NewHTTPServer(ctx, user.MakeEndpoints(service))
+
+	pagLimDef := os.Getenv("PAGINATOR_LIMIT_DEFAULT")
+	if pagLimDef == "" {
+		slog.Error(err.Error())
+		os.Exit(-1)
+	}
+
+	h := handler.NewHTTPServer(ctx, user.MakeEndpoints(service, user.Config{LimPageDef: pagLimDef}))
 	h = handler.NewHTTPRolesServer(ctx, h, role.MakeEndpoints(roleService))
 
 	url := os.Getenv("APP_URL")
+	fmt.Println(fmt.Sprintf("url:  %s", url))
 	srv := &http.Server{
 		Handler:      accessControl(h),
 		Addr:         url,
@@ -67,6 +75,7 @@ func main() {
 	errs := make(chan error)
 
 	go func() {
+		fmt.Println(fmt.Sprintf("listening on %s", url))
 		slog.Info(fmt.Sprintf("listening on %s", url))
 		errs <- srv.ListenAndServe()
 	}()

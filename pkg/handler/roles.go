@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/digitalhouse-dev/dh-kit/response"
 	"github.com/gin-gonic/gin"
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
-	"github.com/ncostamagna/axul_user/internal/user/role"
+	"github.com/ncostamagna/axul-user/internal/user/role"
+	"github.com/ncostamagna/go-http-utils/response"
 	"net/http"
 )
 

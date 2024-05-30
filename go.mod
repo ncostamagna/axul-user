@@ -1,6 +1,6 @@
-module github.com/ncostamagna/axul_user
+module github.com/ncostamagna/axul-user
 
-go 1.21
+go 1.22
 
 require (
 	github.com/digitalhouse-dev/dh-kit v0.1.0
@@ -10,13 +10,13 @@ require (
 	github.com/joho/godotenv v1.3.0
 	github.com/ncostamagna/axul_auth v1.1.0
 	github.com/ncostamagna/axul_domain v0.0.6
+	github.com/ncostamagna/go-http-utils v0.0.5
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
 	gorm.io/driver/mysql v1.5.2
 	gorm.io/gorm v1.25.5
 )
 
 require (
-	github.com/getsentry/sentry-go v0.11.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-kit/log v0.2.0 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect

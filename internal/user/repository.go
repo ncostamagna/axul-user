@@ -2,10 +2,10 @@ package user
 
 import (
 	"context"
-	"log/slog"
 	"github.com/google/uuid"
 	domain "github.com/ncostamagna/axul_domain/domain/user"
 	"gorm.io/gorm"
+	"log/slog"
 	"strings"
 )
 
