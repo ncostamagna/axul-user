@@ -3,12 +3,11 @@ module github.com/ncostamagna/axul-user
 go 1.22
 
 require (
-	github.com/digitalhouse-dev/dh-kit v0.1.0
 	github.com/gin-gonic/gin v1.8.2
 	github.com/go-kit/kit v0.12.0
 	github.com/google/uuid v1.3.0
 	github.com/joho/godotenv v1.3.0
-	github.com/ncostamagna/axul_auth v1.1.0
+	github.com/ncostamagna/axul_auth v1.1.3
 	github.com/ncostamagna/axul_domain v0.0.6
 	github.com/ncostamagna/go-http-utils v0.0.5
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
