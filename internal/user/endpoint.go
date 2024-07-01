@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"fmt"
 	"errors"
 	auth "github.com/ncostamagna/axul_auth/auth"
 	domain "github.com/ncostamagna/axul_domain/domain/user"
@@ -31,8 +32,7 @@ type (
 	}
 
 	GetReq struct {
-		ID      string `json:"id"`
-		Preload string `json:"preload"`
+		Authorization string `json:"Authorization"`
 	}
 
 	UpdateReq struct {
@@ -105,8 +105,8 @@ func MakeEndpoints(s Service, config Config) Endpoints {
 func makeGetEndpoint(service Service) Controller {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GetReq)
-
-		users, err := service.Get(ctx, req.ID, req.Preload)
+		fmt.Println(req)
+		user, err := service.GetByToken(ctx, req.Authorization)
 		if err != nil {
 			if err == NotFound {
 				return nil, response.NotFound(err.Error())
@@ -114,7 +114,7 @@ func makeGetEndpoint(service Service) Controller {
 			return nil, response.InternalServerError(err.Error())
 		}
 
-		return response.OK("", users, nil), nil
+		return response.OK("", user, nil), nil
 	}
 }
 

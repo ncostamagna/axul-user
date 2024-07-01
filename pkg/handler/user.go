@@ -24,6 +24,8 @@ func NewHTTPServer(_ context.Context, endpoints user.Endpoints) http.Handler {
 
 	r.Use(ginDecode())
 
+
+	//Deprecated
 	r.GET("/users/:id/token/:token", gin.WrapH(httptransport.NewServer(
 		endpoint.Endpoint(endpoints.Token),
 		decodeTokenHandler,
@@ -31,6 +33,7 @@ func NewHTTPServer(_ context.Context, endpoints user.Endpoints) http.Handler {
 		opts...,
 	)))
 
+	//Deprecated
 	r.GET("/users/:id", gin.WrapH(httptransport.NewServer(
 		endpoint.Endpoint(endpoints.Get),
 		decodeGetHandler,
@@ -39,8 +42,8 @@ func NewHTTPServer(_ context.Context, endpoints user.Endpoints) http.Handler {
 	)))
 
 	r.GET("/users", gin.WrapH(httptransport.NewServer(
-		endpoint.Endpoint(endpoints.GetAll),
-		decodeGetAllHandler,
+		endpoint.Endpoint(endpoints.Get),
+		decodeGetHandler,
 		encodeResponse,
 		opts...,
 	)))
@@ -80,6 +83,8 @@ func NewHTTPServer(_ context.Context, endpoints user.Endpoints) http.Handler {
 func ginDecode() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), "params", c.Params)
+		ctx = context.WithValue(ctx, "header", c.Request.Header)
+		fmt.Println(c.Header)
 		c.Request = c.Request.WithContext(ctx)
 		c.Next()
 	}
@@ -95,9 +100,14 @@ func decodeStoreHandler(_ context.Context, r *http.Request) (interface{}, error)
 }
 
 func decodeGetHandler(ctx context.Context, r *http.Request) (interface{}, error) {
-	pp := ctx.Value("params").(gin.Params)
+	pp := ctx.Value("header").(http.Header)
+	
+	if len(pp["Authorization"]) < 1 {
+		return nil, response.BadRequest("invalid authentication")
+	}
+
 	req := user.GetReq{
-		ID: pp.ByName("id"),
+		Authorization: pp["Authorization"][0],
 	}
 
 	return req, nil

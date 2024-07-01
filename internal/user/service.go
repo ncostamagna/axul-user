@@ -18,7 +18,7 @@ type Filters struct {
 
 type Service interface {
 	Get(ctx context.Context, id, pload string) (*domain.User, error)
-	//GetByUserName(ctx context.Context, username string) (*domain.User, error)
+	GetByToken(ctx context.Context, token string) (*domain.User, error)
 	GetAll(ctx context.Context, filters Filters, offset, limit int, pload string) ([]domain.User, error)
 	Create(ctx context.Context, userName, firstName, lastName, password, email, phone, clientID, clientSecret, token, language string) (*domain.User, error)
 	Update(ctx context.Context, id string, firstname, lastname, email, phone, photo, language *string) error
@@ -53,6 +53,16 @@ func (s *service) Get(ctx context.Context, id, pload string) (*domain.User, erro
 
 	s.logger.Info(fmt.Sprintf("Get %s User", user.ID))
 	return user, nil
+}
+
+func (s *service) GetByToken(ctx context.Context, token string) (*domain.User, error) {
+	u, err := s.auth.Check(token)
+	fmt.Println(u)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.Get(ctx, u.ID, "")
 }
 
 func (s *service) GetAll(ctx context.Context, filters Filters, offset, limit int, pload string) ([]domain.User, error) {
@@ -162,7 +172,7 @@ func (s *service) Login(ctx context.Context, user *domain.User, password string)
 		return "", InvalidAuthentication
 	}
 
-	token, err := s.auth.Create(user.ID, user.UserName, 60)
+	token, err := s.auth.Create(user.ID, user.UserName, "", true, 0)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return "", InvalidAuthentication
