@@ -26,7 +26,7 @@ func main() {
 	slog.Info("DataBases")
 	db, err := bootstrap.DBConnection()
 	if err != nil {
-		slog.Error(err.Error())
+		logger.Error(err)
 		os.Exit(-1)
 	}
 
@@ -36,7 +36,7 @@ func main() {
 	token := os.Getenv("TOKEN")
 	auth, err := authentication.New(token)
 	if err != nil {
-		slog.Error(err.Error())
+		logger.Error(err)
 		os.Exit(-1)
 	}
 
