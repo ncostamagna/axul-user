@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/google/uuid"
 	domain "github.com/ncostamagna/axul_domain/domain/user"
+	"github.com/ncostamagna/go-logger-hub/loghub"
 	"gorm.io/gorm"
-	"log/slog"
 	"strings"
 )
 
@@ -21,10 +21,10 @@ type Repository interface {
 
 type repo struct {
 	db     *gorm.DB
-	logger *slog.Logger
+	logger loghub.Logger
 }
 
-func NewRepository(db *gorm.DB, logger *slog.Logger) Repository {
+func NewRepository(db *gorm.DB, logger loghub.Logger) Repository {
 	return &repo{db, logger}
 }
 
@@ -108,7 +108,7 @@ func (r *repo) Update(ctx context.Context, id string, firstname, lastname, email
 
 	result := r.db.WithContext(ctx).Model(&domain.User{}).Where("id = ?", id).Updates(values)
 	if result.Error != nil {
-		r.logger.Error(result.Error.Error())
+		r.logger.Error(result.Error)
 		return result.Error
 	}
 
@@ -128,7 +128,7 @@ func (r *repo) Count(ctx context.Context, filters Filters) (int, error) {
 	tx := r.db.WithContext(ctx).Model(domain.User{})
 	tx = applyFilters(tx, filters)
 	if err := tx.Count(&count).Error; err != nil {
-		r.logger.Error(err.Error())
+		r.logger.Error(err)
 		return 0, err
 	}
 

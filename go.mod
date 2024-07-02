@@ -1,6 +1,6 @@
 module github.com/ncostamagna/axul-user
 
-go 1.22
+go 1.22.3
 
 require (
 	github.com/gin-gonic/gin v1.8.2
@@ -10,6 +10,7 @@ require (
 	github.com/ncostamagna/axul_auth v1.1.3
 	github.com/ncostamagna/axul_domain v0.0.6
 	github.com/ncostamagna/go-http-utils v0.0.5
+	github.com/ncostamagna/go-logger-hub v0.0.1
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
 	gorm.io/driver/mysql v1.5.2
 	gorm.io/gorm v1.25.5

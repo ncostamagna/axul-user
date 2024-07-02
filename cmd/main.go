@@ -18,17 +18,14 @@ import (
 
 func main() {
 
-	slog, err := bootstrap.NewLogger()
-	if err != nil {
-		panic(err)
-	}
+	logger := bootstrap.NewLogger()
 
 	_ = godotenv.Load()
 
-	slog.Info("DataBases")
+	logger.Info("DataBases")
 	db, err := bootstrap.DBConnection()
 	if err != nil {
-		slog.Error(err.Error())
+		logger.Error(err)
 		os.Exit(-1)
 	}
 
@@ -38,25 +35,25 @@ func main() {
 	token := os.Getenv("TOKEN")
 	auth, err := authentication.New(token)
 	if err != nil {
-		slog.Error(err.Error())
+		logger.Error(err)
 		os.Exit(-1)
 	}
 
 	var service user.Service
 	{
-		repository := user.NewRepository(db, slog)
-		service = user.NewService(repository, auth, slog)
+		repository := user.NewRepository(db, logger)
+		service = user.NewService(repository, auth, logger)
 	}
 
 	var roleService role.Service
 	{
-		repository := role.NewRepository(db, slog)
-		roleService = role.NewService(repository, service, slog)
+		repository := role.NewRepository(db, logger)
+		roleService = role.NewService(repository, service, logger)
 	}
 
 	pagLimDef := os.Getenv("PAGINATOR_LIMIT_DEFAULT")
 	if pagLimDef == "" {
-		slog.Error(err.Error())
+		logger.Error(err)
 		os.Exit(-1)
 	}
 
@@ -76,13 +73,13 @@ func main() {
 
 	go func() {
 		fmt.Println(fmt.Sprintf("listening on %s", url))
-		slog.Info(fmt.Sprintf("listening on %s", url))
+		logger.Info(fmt.Sprintf("listening on %s", url))
 		errs <- srv.ListenAndServe()
 	}()
 
 	err = <-errs
 	if err != nil {
-		slog.Error(err.Error())
+		logger.Error(err)
 	}
 
 }

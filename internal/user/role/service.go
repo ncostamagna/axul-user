@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/ncostamagna/axul-user/internal/user"
 	domain "github.com/ncostamagna/axul_domain/domain/user"
-	"log/slog"
+	"github.com/ncostamagna/go-logger-hub/loghub"
 )
 
 type Filters struct {
@@ -24,11 +24,11 @@ type service struct {
 	repo    Repository
 	userSrv user.Service
 	//auth    authentication.Auth
-	logger *slog.Logger
+	logger loghub.Logger
 }
 
 // NewService is a service handler
-func NewService(repo Repository, userSrv user.Service, logger *slog.Logger) Service {
+func NewService(repo Repository, userSrv user.Service, logger loghub.Logger) Service {
 	return &service{
 		repo:    repo,
 		userSrv: userSrv,
@@ -44,7 +44,7 @@ func (s *service) Create(ctx context.Context, userId, app string) (*domain.Role,
 	}
 
 	if err := s.repo.Create(ctx, &role); err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err)
 		return nil, err
 	}
 	s.logger.Debug(fmt.Sprintf("Create %s Role", role.ID))

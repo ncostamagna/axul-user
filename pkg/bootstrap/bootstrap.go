@@ -3,14 +3,17 @@ package bootstrap
 import (
 	"fmt"
 	domain "github.com/ncostamagna/axul_domain/domain/user"
+	"github.com/ncostamagna/go-logger-hub/loghub"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"log/slog"
 	"os"
-	"strings"
-	"time"
 )
 
+func NewLogger() loghub.Logger {
+	return loghub.New(loghub.NewNativeLogger(nil, 15))
+}
+
+/*
 func NewLogger() (*slog.Logger, error) {
 
 	date := time.Now()
@@ -41,7 +44,7 @@ func NewLogger() (*slog.Logger, error) {
 			return a
 		},
 	})), nil
-}
+}*/
 
 func DBConnection() (*gorm.DB, error) {
 
