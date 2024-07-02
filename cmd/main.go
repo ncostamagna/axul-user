@@ -7,7 +7,6 @@ import (
 	"github.com/ncostamagna/axul-user/pkg/bootstrap"
 	"github.com/ncostamagna/axul-user/pkg/handler"
 	authentication "github.com/ncostamagna/axul_auth/auth"
-	"log/slog"
 	"time"
 
 	"context"
@@ -23,7 +22,7 @@ func main() {
 
 	_ = godotenv.Load()
 
-	slog.Info("DataBases")
+	logger.Info("DataBases")
 	db, err := bootstrap.DBConnection()
 	if err != nil {
 		logger.Error(err)
@@ -54,7 +53,7 @@ func main() {
 
 	pagLimDef := os.Getenv("PAGINATOR_LIMIT_DEFAULT")
 	if pagLimDef == "" {
-		slog.Error(err.Error())
+		logger.Error(err)
 		os.Exit(-1)
 	}
 
@@ -74,13 +73,13 @@ func main() {
 
 	go func() {
 		fmt.Println(fmt.Sprintf("listening on %s", url))
-		slog.Info(fmt.Sprintf("listening on %s", url))
+		logger.Info(fmt.Sprintf("listening on %s", url))
 		errs <- srv.ListenAndServe()
 	}()
 
 	err = <-errs
 	if err != nil {
-		slog.Error(err.Error())
+		logger.Error(err)
 	}
 
 }
