@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	domain "github.com/ncostamagna/axul_domain/domain/user"
+	"github.com/ncostamagna/go-logger-hub/loghub"
 
 	authentication "github.com/ncostamagna/axul_auth/auth"
 
 	"golang.org/x/crypto/bcrypt"
-	"log/slog"
 )
 
 type Filters struct {
@@ -32,11 +32,11 @@ type Service interface {
 type service struct {
 	repo   Repository
 	auth   authentication.Auth
-	logger *slog.Logger
+	logger loghub.Logger
 }
 
 // NewService is a service handler
-func NewService(repo Repository, auth authentication.Auth, logger *slog.Logger) Service {
+func NewService(repo Repository, auth authentication.Auth, logger loghub.Logger) Service {
 	return &service{
 		repo:   repo,
 		auth:   auth,
@@ -47,7 +47,7 @@ func NewService(repo Repository, auth authentication.Auth, logger *slog.Logger) 
 func (s *service) Get(ctx context.Context, id, pload string) (*domain.User, error) {
 	user, err := s.repo.Get(ctx, id)
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Warn(err)
 		return nil, NotFound
 	}
 
@@ -68,7 +68,7 @@ func (s *service) GetByToken(ctx context.Context, token string) (*domain.User, e
 func (s *service) GetAll(ctx context.Context, filters Filters, offset, limit int, pload string) ([]domain.User, error) {
 	users, err := s.repo.GetAll(ctx, filters, offset, limit)
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err)
 		return nil, err
 	}
 
@@ -80,7 +80,7 @@ func (s *service) Create(ctx context.Context, userName, firstName, lastName, pas
 
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err)
 		return nil, err
 	}
 
@@ -107,7 +107,7 @@ func (s *service) Create(ctx context.Context, userName, firstName, lastName, pas
 	}
 
 	if err := s.repo.Create(ctx, &user); err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err)
 		return nil, err
 	}
 	s.logger.Info(fmt.Sprintf("Create %s User", user.ID))
@@ -139,18 +139,18 @@ func (s *service) Update(ctx context.Context, id string, firstname, lastname, em
 func (s *service) UpdatePassword(ctx context.Context, id, newPassword, oldPassword string) error {
 	user, err := s.repo.Get(ctx, id)
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err)
 		return ErrNotFound{id}
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(oldPassword)); err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err)
 		return InvalidPassword
 	}
 
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err)
 		return err
 	}
 
@@ -168,13 +168,13 @@ func (s *service) Delete(ctx context.Context, id string) error {
 func (s *service) Login(ctx context.Context, user *domain.User, password string) (string, error) {
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err)
 		return "", InvalidAuthentication
 	}
 
 	token, err := s.auth.Create(user.ID, user.UserName, "", true, 0)
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err)
 		return "", InvalidAuthentication
 	}
 	return token, nil
@@ -188,7 +188,7 @@ func (s *service) TokenAccess(ctx context.Context, id, token string) (*domain.Us
 
 	user, err := s.repo.Get(ctx, id)
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Warn(err)
 		return nil, NotFound
 	}
 

@@ -63,6 +63,8 @@ github.com/ncostamagna/axul_domain v0.0.6 h1:EjV2AX5mpcoiddDQ4l3Tv6pE26WQbY7ZIVo
 github.com/ncostamagna/axul_domain v0.0.6/go.mod h1:IbHm2VphdPLCCuxmZEgXPCFB0Z06wXI7JfuDex3wpmM=
 github.com/ncostamagna/go-http-utils v0.0.5 h1:gAAXvZrVCq7cAwUBHeKIvbL5n0WD6VFgs6LEc9LLXiM=
 github.com/ncostamagna/go-http-utils v0.0.5/go.mod h1:Z4K2K6AKrjSp8LAnDfi/HMfsfK1+fMQ6mxeBK9Kgmxw=
+github.com/ncostamagna/go-logger-hub v0.0.1 h1:muN2A7mxx7D7CMIMKBdiSBoaSwy2c+2SUNhSpaU/ajQ=
+github.com/ncostamagna/go-logger-hub v0.0.1/go.mod h1:QaFU/n2rOKVhCdk26PWgj+uUocD/IUNh0PuynaRky4E=
 github.com/pelletier/go-toml/v2 v2.0.6 h1:nrzqCb7j9cDFj2coyLNLaZuJTLjWjlaz6nvTvIwycIU=
 github.com/pelletier/go-toml/v2 v2.0.6/go.mod h1:eumQOmlWiOPt5WriQQqoM5y18pDHwha2N+QD+EUNTek=
 github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e/go.mod h1:pJLUxLENpZxwdsKMEsNbx1VGcRFpLqf3715MtcvvzbA=

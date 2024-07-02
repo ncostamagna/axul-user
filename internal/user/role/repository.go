@@ -3,8 +3,8 @@ package role
 import (
 	"context"
 	domain "github.com/ncostamagna/axul_domain/domain/user"
+	"github.com/ncostamagna/go-logger-hub/loghub"
 	"gorm.io/gorm"
-	"log/slog"
 )
 
 type Repository interface {
@@ -18,10 +18,10 @@ type Repository interface {
 
 type repo struct {
 	db     *gorm.DB
-	logger *slog.Logger
+	logger loghub.Logger
 }
 
-func NewRepository(db *gorm.DB, log *slog.Logger) Repository {
+func NewRepository(db *gorm.DB, log loghub.Logger) Repository {
 	return &repo{db, log}
 }
 
@@ -38,7 +38,7 @@ func (r *repo) Update(ctx context.Context, userID, app string, role *uint64) err
 
 	result := r.db.WithContext(ctx).Model(&domain.Role{}).Where("user_id = ? and app = ?", userID, app).Updates(values)
 	if err := result.Error; err != nil {
-		r.logger.Error(err.Error())
+		r.logger.Error(err)
 		return err
 	}
 
@@ -57,7 +57,7 @@ func (r *repo) GetAll(ctx context.Context, filters Filters, offset, limit int) (
 	result := tx.Order("created_at desc").Find(&role)
 
 	if err := result.Error; err != nil {
-		r.logger.Error(err.Error())
+		r.logger.Error(err)
 		return nil, err
 	}
 
@@ -69,7 +69,7 @@ func (r *repo) Count(ctx context.Context, filters Filters) (int, error) {
 	tx := r.db.WithContext(ctx).Model(domain.Role{})
 	tx = applyFilters(tx, filters)
 	if err := tx.Count(&count).Error; err != nil {
-		r.logger.Error(err.Error())
+		r.logger.Error(err)
 		return 0, err
 	}
 

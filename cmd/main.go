@@ -7,6 +7,7 @@ import (
 	"github.com/ncostamagna/axul-user/pkg/bootstrap"
 	"github.com/ncostamagna/axul-user/pkg/handler"
 	authentication "github.com/ncostamagna/axul_auth/auth"
+	"log/slog"
 	"time"
 
 	"context"
@@ -18,10 +19,7 @@ import (
 
 func main() {
 
-	slog, err := bootstrap.NewLogger()
-	if err != nil {
-		panic(err)
-	}
+	logger := bootstrap.NewLogger()
 
 	_ = godotenv.Load()
 
@@ -44,14 +42,14 @@ func main() {
 
 	var service user.Service
 	{
-		repository := user.NewRepository(db, slog)
-		service = user.NewService(repository, auth, slog)
+		repository := user.NewRepository(db, logger)
+		service = user.NewService(repository, auth, logger)
 	}
 
 	var roleService role.Service
 	{
-		repository := role.NewRepository(db, slog)
-		roleService = role.NewService(repository, service, slog)
+		repository := role.NewRepository(db, logger)
+		roleService = role.NewService(repository, service, logger)
 	}
 
 	pagLimDef := os.Getenv("PAGINATOR_LIMIT_DEFAULT")
